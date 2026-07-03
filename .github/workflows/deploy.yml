@@ -9,8 +9,8 @@ on:
   push:
     branches: [develop, main]
 
-env:
-  AWS_REGION: eu-west-1
+# AWS_REGION is resolved from the GitHub organization-level Actions variable
+# (D-070) — not hardcoded per repo.
 
 jobs:
   test:
@@ -70,7 +70,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::276594885933:role/GitHubActionsDeployRole
-          aws-region: ${{ env.AWS_REGION }}
+          aws-region: ${{ vars.AWS_REGION }}
 
       - name: Read deploy config from SSM
         id: ssm
@@ -124,7 +124,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::475790160542:role/GitHubActionsDeployRole
-          aws-region: ${{ env.AWS_REGION }}
+          aws-region: ${{ vars.AWS_REGION }}
 
       - name: Read deploy config from SSM
         id: ssm
@@ -178,7 +178,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::438825592314:role/GitHubActionsDeployRole
-          aws-region: ${{ env.AWS_REGION }}
+          aws-region: ${{ vars.AWS_REGION }}
 
       - name: Read deploy config from SSM
         id: ssm
