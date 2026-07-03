@@ -51,7 +51,7 @@ installable, offline-capable (D-024).
 - Vitest + React Testing Library (D-030). `pnpm run test` (single run), `pnpm run test:watch`.
 - `pnpm run test:pre-pr` = typecheck + test — the pre-PR gate (`05-testing.md`).
 - Component tests cover all declared states (default/hover/focus/disabled/loading/error) per kit
-  component; see e.g. `src/components/ui/Button/Button.test.tsx`.
+  component: `Button.test.tsx`, `Spinner.test.tsx`, `Card.test.tsx`.
 - No integration/E2E suites yet — add Playwright E2E once auth + at least one real data screen exist.
 
 ## Local dev setup
