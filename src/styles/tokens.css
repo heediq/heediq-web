@@ -1,0 +1,25 @@
+/* Design tokens — D-008. Values reproduced verbatim from
+   claude-workspace/memory/business/branding.md. CSS variables (not hardcoded
+   Tailwind values) so the palette stays swappable per D-008. */
+:root {
+  --surface-0: #0e0d0c;
+  --surface-1: #1a1816;
+  --surface-2: #242019;
+  --border: #2e2a23;
+
+  --text-primary: #ede8e0;
+  --text-secondary: #a39a8c;
+  --text-disabled: #6b645a;
+
+  --accent: #f0a93b;
+  --accent-hover: #ffc062;
+  --accent-pressed: #d4922a;
+
+  /* Provisional — not yet locked in DECISIONS.md; branding.md defines the
+     charcoal/amber core palette but not state colors. Revisit with design
+     before shipping error/warning-heavy surfaces. */
+  --success: #4ade80;
+  --warning: #f0a93b;
+  --danger: #f87171;
+  --info: #7dd3fc;
+}

@@ -1,0 +1,201 @@
+name: Deploy
+
+# Unlike the Lambda/Docker repos, the build artifact bakes in VITE_* env vars
+# at build time, so each environment gets its own build (build-once-promote
+# doesn't apply to a static frontend bundle the way it does to a container
+# image or Lambda zip).
+
+on:
+  push:
+    branches: [develop, main]
+
+# AWS_REGION is resolved from the GitHub organization-level Actions variable
+# (D-070) — not hardcoded per repo.
+
+jobs:
+  test:
+    name: Typecheck & test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@heediq'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - run: pnpm run test:pre-pr
+
+  deploy-dev:
+    name: Build & deploy → dev
+    needs: test
+    if: github.ref_name == 'develop'
+    runs-on: ubuntu-latest
+    environment: dev
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@heediq'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # GitHubActionsDeployRole in the dev workload account (D-043, D-045).
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::276594885933:role/GitHubActionsDeployRole
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Read deploy config from SSM
+        id: ssm
+        run: |
+          echo "api_base_url=$(aws ssm get-parameter --name /heediq/api/endpoint-url --query Parameter.Value --output text)" >> "$GITHUB_OUTPUT"
+          echo "ws_base_url=$(aws ssm get-parameter --name /heediq/api/ws-endpoint-url --query Parameter.Value --output text)" >> "$GITHUB_OUTPUT"
+          echo "bucket_name=$(aws ssm get-parameter --name /heediq/api/web-assets-bucket-name --query Parameter.Value --output text)" >> "$GITHUB_OUTPUT"
+          echo "distribution_id=$(aws ssm get-parameter --name /heediq/web/cloudfront-distribution-id --query Parameter.Value --output text)" >> "$GITHUB_OUTPUT"
+
+      - name: Build
+        run: pnpm run build
+        env:
+          VITE_API_BASE_URL: ${{ steps.ssm.outputs.api_base_url }}
+          VITE_WS_BASE_URL: ${{ steps.ssm.outputs.ws_base_url }}
+
+      - name: Sync to S3
+        run: aws s3 sync dist/ "s3://${{ steps.ssm.outputs.bucket_name }}" --delete
+
+      - name: Invalidate CloudFront cache
+        run: aws cloudfront create-invalidation --distribution-id "${{ steps.ssm.outputs.distribution_id }}" --paths "/*"
+
+  deploy-staging:
+    name: Build & deploy → staging
+    needs: test
+    if: github.ref_name == 'main'
+    runs-on: ubuntu-latest
+    environment: staging
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@heediq'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::475790160542:role/GitHubActionsDeployRole
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Read deploy config from SSM
+        id: ssm
+        run: |
+          echo "api_base_url=$(aws ssm get-parameter --name /heediq/api/endpoint-url --query Parameter.Value --output text)" >> "$GITHUB_OUTPUT"
+          echo "ws_base_url=$(aws ssm get-parameter --name /heediq/api/ws-endpoint-url --query Parameter.Value --output text)" >> "$GITHUB_OUTPUT"
+          echo "bucket_name=$(aws ssm get-parameter --name /heediq/api/web-assets-bucket-name --query Parameter.Value --output text)" >> "$GITHUB_OUTPUT"
+          echo "distribution_id=$(aws ssm get-parameter --name /heediq/web/cloudfront-distribution-id --query Parameter.Value --output text)" >> "$GITHUB_OUTPUT"
+
+      - name: Build
+        run: pnpm run build
+        env:
+          VITE_API_BASE_URL: ${{ steps.ssm.outputs.api_base_url }}
+          VITE_WS_BASE_URL: ${{ steps.ssm.outputs.ws_base_url }}
+
+      - name: Sync to S3
+        run: aws s3 sync dist/ "s3://${{ steps.ssm.outputs.bucket_name }}" --delete
+
+      - name: Invalidate CloudFront cache
+        run: aws cloudfront create-invalidation --distribution-id "${{ steps.ssm.outputs.distribution_id }}" --paths "/*"
+
+  deploy-prod:
+    name: Build & deploy → prod
+    needs: [test, deploy-staging]
+    if: github.ref_name == 'main'
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@heediq'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::438825592314:role/GitHubActionsDeployRole
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Read deploy config from SSM
+        id: ssm
+        run: |
+          echo "api_base_url=$(aws ssm get-parameter --name /heediq/api/endpoint-url --query Parameter.Value --output text)" >> "$GITHUB_OUTPUT"
+          echo "ws_base_url=$(aws ssm get-parameter --name /heediq/api/ws-endpoint-url --query Parameter.Value --output text)" >> "$GITHUB_OUTPUT"
+          echo "bucket_name=$(aws ssm get-parameter --name /heediq/api/web-assets-bucket-name --query Parameter.Value --output text)" >> "$GITHUB_OUTPUT"
+          echo "distribution_id=$(aws ssm get-parameter --name /heediq/web/cloudfront-distribution-id --query Parameter.Value --output text)" >> "$GITHUB_OUTPUT"
+
+      - name: Build
+        run: pnpm run build
+        env:
+          VITE_API_BASE_URL: ${{ steps.ssm.outputs.api_base_url }}
+          VITE_WS_BASE_URL: ${{ steps.ssm.outputs.ws_base_url }}
+
+      - name: Sync to S3
+        run: aws s3 sync dist/ "s3://${{ steps.ssm.outputs.bucket_name }}" --delete
+
+      - name: Invalidate CloudFront cache
+        run: aws cloudfront create-invalidation --distribution-id "${{ steps.ssm.outputs.distribution_id }}" --paths "/*"
