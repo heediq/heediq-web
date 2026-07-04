@@ -1,10 +1,12 @@
 {
   "common": {
-    "loading": "Loading"
+    "loading": "Loading",
+    "retry": "Retry"
   },
   "home": {
     "title": "heediq",
-    "subtitle": "Home / Listen screen — coming next."
+    "subtitle": "Meeting notes, extracted automatically.",
+    "signIn": "Sign in"
   },
   "sourcesLibrary": {
     "comingSoon": "Sources library — coming next."
@@ -13,7 +15,12 @@
     "comingSoon": "Source detail ({{sourceId}}) — coming next."
   },
   "authCallback": {
-    "notWiredUp": "Auth callback — Cognito flow not wired up yet."
+    "signingIn": "Signing you in",
+    "error": {
+      "title": "Could not sign you in",
+      "description": "Something went wrong completing your login. Please try again.",
+      "retry": "Back to sign in"
+    }
   },
   "errors": {
     "requestFailed": "Request failed: {{status}}"

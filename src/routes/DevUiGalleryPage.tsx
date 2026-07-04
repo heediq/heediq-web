@@ -1,5 +1,5 @@
 import { Bell, Mic } from 'lucide-react'
-import { Badge, Button, Card, LoadingMark, Spinner } from '../components/ui'
+import { Badge, Button, Card, ErrorState, LoadingMark, Spinner } from '../components/ui'
 
 export function DevUiGalleryPage() {
   return (
@@ -60,6 +60,15 @@ export function DevUiGalleryPage() {
           <LoadingMark size="lg" tone="gradient" aria-label="Loading sources" />
           <LoadingMark size="sm" aria-label="Loading" />
         </div>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-h2">ErrorState</h2>
+        <ErrorState
+          title="Could not sign you in"
+          description="Something went wrong exchanging your login. Try again."
+          onRetry={() => {}}
+        />
       </section>
     </div>
   )
