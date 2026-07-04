@@ -29,11 +29,14 @@ sign-up/sign-in/password-reset — keeping the backend surface minimal.
 
 ## Data Flow / How It Works
 **Normal login:** `HomePage` calls `apiClient.post('/auth/lookup-email')` to branch into sign-up,
-sign-in, or (if `passwordSet: false`) the federated-linking-via-forgot-password flow. Successful
-sign-in/sign-up calls `cognito-idp.ts` directly, converts the resulting camelCase tokens to the
-snake_case `TokenResponse` shape, and calls `applyTokens()` — the one path that mutates the current
-session. SSO users go through `startLogin()` → Hosted UI → `/auth/callback` →
-`exchangeCodeForTokens()` → `applyTokens()`.
+sign-in, or (if `passwordSet: false`) the reactive cross-provider linking flow (D-087): it calls
+`POST /auth/link/request-otp` (backend triggers a Cognito-native verification code via `SignUp`/
+`ResendConfirmationCode`, no account-existence enumeration) then, on code entry, `POST
+/auth/link/confirm` with the code + new password — `heediq-api` handles `ConfirmSignUp` +
+`AdminSetUserPassword` + `AdminLinkProviderForUser` server-side. Successful sign-in/sign-up calls
+`cognito-idp.ts` directly, converts the resulting camelCase tokens to the snake_case `TokenResponse`
+shape, and calls `applyTokens()` — the one path that mutates the current session. SSO users go
+through `startLogin()` → Hosted UI → `/auth/callback` → `exchangeCodeForTokens()` → `applyTokens()`.
 
 **Proactive provider linking (D-079, D-083):** from `SettingsPage`, `startProviderLink(provider)`
 starts a *second*, independent PKCE round trip (its own `heediq.pkce.link.*` sessionStorage keys) with
@@ -52,9 +55,9 @@ now installed in `heediq-api` per D-084, see `heediq-api` README) so the server 
 - `identities` ID-token claim (Cognito-attached on federated sign-in): JSON-stringified array of
   `{ userId, providerName, providerType, issuer, primary, dateCreated }`. Only `identities[0]` is
   used — a fresh federated round trip yields exactly one.
-- Backend calls made from this module: `POST /auth/lookup-email`, `POST /auth/link/confirm`,
-  `POST /settings/link/add-provider` (request/response shapes owned by `heediq-api`, not duplicated
-  here).
+- Backend calls made from this module: `POST /auth/lookup-email`, `POST /auth/link/request-otp`,
+  `POST /auth/link/confirm`, `POST /settings/link/add-provider` (request/response shapes owned by
+  `heediq-api`, not duplicated here).
 
 ## Dependencies
 - **Upstream:** Cognito User Pool + App Client (`heediq-infra` `foundation-stack.ts`) — the
