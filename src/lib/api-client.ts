@@ -3,6 +3,10 @@ import { i18n } from '../i18n/config'
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string
 const WS_BASE_URL = import.meta.env.VITE_WS_BASE_URL as string
 
+// The only place the API version prefix is written (D-088) — callers pass a bare resource
+// path (e.g. '/auth/lookup-email') and never the prefix itself.
+const API_VERSION_PREFIX = '/api/v1'
+
 /**
  * JWT is read fresh on every call (not cached at module scope) so a token
  * refresh mid-session is picked up without re-instantiating the client.
@@ -15,7 +19,7 @@ export function setAccessTokenGetter(fn: () => string | null): void {
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const token = getAccessToken()
-  const res = await fetch(`${API_BASE_URL}${path}`, {
+  const res = await fetch(`${API_BASE_URL}${API_VERSION_PREFIX}${path}`, {
     ...init,
     headers: {
       'Content-Type': 'application/json',

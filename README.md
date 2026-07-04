@@ -29,6 +29,10 @@ installable, offline-capable (D-024).
   `import.meta.env`; `setAccessTokenGetter()` lets the auth layer inject a JWT getter (read fresh
   per call, not cached at module scope) that's added as `Authorization: Bearer <token>`. Unwraps
   the `{ ok, data }` / `{ ok, error }` API envelope (`@heediq/shared`'s `ApiResponse<T>`).
+  **Owns the `/api/v1` version prefix (D-088)** — callers pass a bare resource path
+  (`apiClient.post('/auth/lookup-email', ...)`), never the prefix; `request()` prepends it exactly
+  once. `VITE_API_BASE_URL`/the `/heediq/api/endpoint-url` SSM param stay version-free (bare origin)
+  on purpose, so the API's version can change independently of the domain.
 - `src/lib/query-client.ts` — shared TanStack Query client (server state; see `07-engineering-standards.md` §7).
 - `src/lib/cn.ts` — `clsx` + `tailwind-merge` className helper used by every kit component.
 - `src/lib/auth/` — full client-direct Cognito auth module (email-first sign-in/sign-up, D-078;
@@ -103,7 +107,9 @@ installable, offline-capable (D-024).
   `AuthContext.test.tsx`, `ProtectedRoute.test.tsx`, and `routes/__tests__/HomePage.test.tsx`/
   `AuthCallbackPage.test.tsx`/`SettingsPage.test.tsx`/`SettingsLinkCallbackPage.test.tsx` (all with
   `cognito-idp`/`cognito-oauth` mocked at the module boundary — no real network/Cognito calls).
-- 19 test files / 83 tests total (`pnpm run test`).
+- `src/lib/__tests__/api-client.test.ts` (D-088) — asserts the `/api/v1` prefix is applied to every
+  request; regression test for the production 404 that motivated D-088.
+- 22 test files / 89 tests total (`pnpm run test`).
 - No integration/E2E suites yet — add Playwright E2E once at least one real data screen exists
   behind auth.
 
