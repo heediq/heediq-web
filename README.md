@@ -11,7 +11,11 @@ installable, offline-capable (D-024).
   `/dev/ui` gated behind `import.meta.env.DEV`) wrapped in `QueryClientProvider` + `BrowserRouter`.
 - `src/main.tsx` — React root, imports `src/styles/globals.css`.
 - `src/styles/tokens.css` — CSS custom properties for the D-008 design tokens (colors, exact hex
-  values). `success`/`warning`/`danger`/`info` are provisional — not yet locked in DECISIONS.md.
+  values) plus the D-072 status/semantic tokens (`success`, `danger`, `accent-bg`/`accent-border`
+  for in-progress states). No `warning`/`info` tokens — no design currently calls for them.
+- `src/styles/globals.css` — also defines the `LoadingMark` component's keyframes/classes
+  (`heediq-loader-*`, D-074) once globally, copied verbatim from
+  `design_handoff_heediq_brand/Heediq Style Guide.dc.html`.
 - `tailwind.config.ts` — maps Tailwind theme (`colors`, `fontFamily`, `fontSize`, `spacing`,
   `borderRadius`) onto the CSS custom properties in `tokens.css`. Never hardcode a color/space/type
   value outside this file — extend the token set instead.
@@ -20,8 +24,10 @@ installable, offline-capable (D-024).
   per call, not cached at module scope) that's added as `Authorization: Bearer <token>`.
 - `src/lib/query-client.ts` — shared TanStack Query client (server state; see `07-engineering-standards.md` §7).
 - `src/lib/cn.ts` — `clsx` + `tailwind-merge` className helper used by every kit component.
-- `src/components/ui/` — the UI kit: `Button`, `Spinner`, `Card` so far. Each has its own
-  `README.md` (props/variants/states/usage) per `03-ui-kit.md` §9.
+- `src/components/ui/` — the UI kit: `Button`, `Spinner`, `Card`, `Badge` (D-072), `LoadingMark`
+  (D-074) so far. Each has its own `README.md` (props/variants/states/usage) per `03-ui-kit.md` §9.
+- `public/brand/` — final logo assets (`heediq-logo.png`, `heediq-badge-bg.svg`,
+  `heediq-stubs.svg`), copied verbatim from `design_handoff_heediq_brand/assets/` per D-073.
 - `src/routes/` — screen-level route components. Currently placeholders (`HomePage`,
   `AuthCallbackPage`, `SourcesLibraryPage`, `SourceDetailPage`) pending the auth/Listen/library/
   detail build-out.
@@ -51,7 +57,8 @@ installable, offline-capable (D-024).
 - Vitest + React Testing Library (D-030). `pnpm run test` (single run), `pnpm run test:watch`.
 - `pnpm run test:pre-pr` = typecheck + test — the pre-PR gate (`05-testing.md`).
 - Component tests cover all declared states (default/hover/focus/disabled/loading/error) per kit
-  component: `Button.test.tsx`, `Spinner.test.tsx`, `Card.test.tsx`.
+  component: `Button.test.tsx`, `Spinner.test.tsx`, `Card.test.tsx`, `Badge.test.tsx`,
+  `LoadingMark.test.tsx`.
 - No integration/E2E suites yet — add Playwright E2E once auth + at least one real data screen exist.
 
 ## Local dev setup
@@ -85,5 +92,3 @@ runs `pnpm run build`, syncs `dist/` to that environment's web-assets bucket
   through `tailwind.config.ts`, not ad-hoc `dark:` utilities (see `branding.md`).
 - **No bespoke styling in feature/route code** (`03-ui-kit.md` golden rule) — if a screen needs a
   visual element the kit doesn't have, add it to `src/components/ui/` first.
-- `success`/`warning`/`danger`/`info` token colors in `tokens.css` are placeholders pending a locked
-  decision — flag before treating them as final.

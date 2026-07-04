@@ -14,12 +14,15 @@
   --accent: #f0a93b;
   --accent-hover: #ffc062;
   --accent-pressed: #d4922a;
+  --accent-bg: rgba(240, 169, 59, 0.14);
+  --accent-border: rgba(240, 169, 59, 0.3);
 
-  /* Provisional — not yet locked in DECISIONS.md; branding.md defines the
-     charcoal/amber core palette but not state colors. Revisit with design
-     before shipping error/warning-heavy surfaces. */
-  --success: #4ade80;
-  --warning: #f0a93b;
-  --danger: #f87171;
-  --info: #7dd3fc;
+  /* Status/semantic colors — D-072. In-progress/active states use --accent,
+     not a separate token. No warning/info tokens exist; add if a real need appears. */
+  --success: #7fcb9c;
+  --success-bg: rgba(90, 168, 120, 0.16);
+  --success-border: rgba(90, 168, 120, 0.32);
+  --danger: #e68a80;
+  --danger-bg: rgba(214, 90, 80, 0.16);
+  --danger-border: rgba(214, 90, 80, 0.32);
 }
