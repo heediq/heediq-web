@@ -24,12 +24,13 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     },
   })
 
-  if (!res.ok) {
-    const body = await res.json().catch(() => null)
+  const body = await res.json().catch(() => null)
+
+  if (!res.ok || !body?.ok) {
     throw new Error(body?.error?.message ?? i18n.t('errors.requestFailed', { status: res.status }))
   }
 
-  return res.json() as Promise<T>
+  return body.data as T
 }
 
 export const apiClient = {

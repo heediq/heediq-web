@@ -27,16 +27,35 @@ installable, offline-capable (D-024).
   value outside this file — extend the token set instead.
 - `src/lib/api-client.ts` — `fetch` wrapper reading `VITE_API_BASE_URL`/`VITE_WS_BASE_URL` from
   `import.meta.env`; `setAccessTokenGetter()` lets the auth layer inject a JWT getter (read fresh
-  per call, not cached at module scope) that's added as `Authorization: Bearer <token>`.
+  per call, not cached at module scope) that's added as `Authorization: Bearer <token>`. Unwraps
+  the `{ ok, data }` / `{ ok, error }` API envelope (`@heediq/shared`'s `ApiResponse<T>`).
 - `src/lib/query-client.ts` — shared TanStack Query client (server state; see `07-engineering-standards.md` §7).
 - `src/lib/cn.ts` — `clsx` + `tailwind-merge` className helper used by every kit component.
+- `src/lib/auth/pkce.ts` — `crypto.subtle`-based PKCE verifier/challenge/state generation, no
+  external deps.
+- `src/lib/auth/cognito-oauth.ts` — Hosted UI OAuth 2.0 Authorization Code + PKCE flow:
+  `startLogin()` redirects to `/oauth2/authorize`; `exchangeCodeForTokens()` and `refreshTokens()`
+  call `/oauth2/token`; `logoutUrl()` builds the Hosted UI `/logout` URL. Reads
+  `VITE_COGNITO_DOMAIN`/`VITE_COGNITO_CLIENT_ID`.
+- `src/lib/auth/token-store.ts` — access/ID token held in module memory only (never persisted);
+  the refresh token is the one thing persisted, in `localStorage`, so a page reload can silently
+  re-authenticate instead of forcing a Hosted UI redirect.
+- `src/lib/auth/AuthContext.tsx` — `AuthProvider`/`useAuth()`. On mount, silently refreshes from a
+  stored refresh token (`status: 'loading' → 'authenticated' | 'anonymous'`); exposes
+  `login()` (→ `startLogin()`), `logout()` (clears session, redirects to Hosted UI logout), and
+  `applyTokens()` (called once by `AuthCallbackPage` after a successful code exchange). Also wires
+  `setAccessTokenGetter()` into `api-client.ts` on mount.
+- `src/lib/auth/ProtectedRoute.tsx` — route guard: shows `LoadingMark` while `status === 'loading'`,
+  redirects to `/` when `anonymous`, renders children when `authenticated`.
 - `src/components/ui/` — the UI kit: `Button`, `Spinner`, `Card`, `Badge` (D-072), `LoadingMark`
-  (D-074) so far. Each has its own `README.md` (props/variants/states/usage) per `03-ui-kit.md` §9.
+  (D-074), `ErrorState`. Each has its own `README.md` (props/variants/states/usage) per
+  `03-ui-kit.md` §9.
 - `public/brand/` — final logo assets (`heediq-logo.png`, `heediq-badge-bg.svg`,
   `heediq-stubs.svg`), copied verbatim from `design_handoff_heediq_brand/assets/` per D-073.
-- `src/routes/` — screen-level route components. Currently placeholders (`HomePage`,
-  `AuthCallbackPage`, `SourcesLibraryPage`, `SourceDetailPage`) pending the auth/Listen/library/
-  detail build-out.
+- `src/routes/` — screen-level route components. `HomePage` (login entry point + post-login
+  redirect), `AuthCallbackPage` (PKCE code exchange, loading/error branches) are wired up.
+  `SourcesLibraryPage`/`SourceDetailPage` are still placeholders behind `ProtectedRoute`, pending
+  the library/detail build-out.
 - `src/routes/DevUiGalleryPage.tsx` — living component gallery (`03-ui-kit.md` §8), only mounted
   in dev builds.
 
@@ -44,22 +63,43 @@ installable, offline-capable (D-024).
 - Server state (API reads/writes) goes through TanStack Query via `apiClient` in `src/lib/api-client.ts`.
 - Client/UI state stays local to components — no separate global store yet; add one only when a
   concrete cross-screen UI-state need appears.
-- Auth: Cognito + Google/Microsoft federated IdPs (D-020). `AuthCallbackPage` will exchange the
-  IdP redirect for a JWT and register it with `setAccessTokenGetter()`; not yet implemented.
+- **Auth (D-020, D-077)**: `HomePage`'s Sign-in button calls `useAuth().login()` →
+  `startLogin()` redirects the browser to the Cognito Hosted UI (`/oauth2/authorize`, PKCE, scopes
+  `email openid profile`; Hosted UI itself renders the Cognito/Google/Microsoft IdP choices — no
+  custom picker needed client-side). Cognito redirects back to `/auth/callback?code=...&state=...`.
+  `AuthCallbackPage` calls `exchangeCodeForTokens()` (validates `state`, POSTs to `/oauth2/token`
+  with the PKCE verifier), then `useAuth().applyTokens()` stores the session and the app navigates
+  to `/sources`. On any failure (Hosted UI `error` param, state mismatch, failed token exchange) it
+  renders the kit `ErrorState` with a "Back to sign in" retry. On every reload, `AuthProvider`
+  silently calls `refreshTokens()` with the persisted refresh token before deciding
+  `authenticated`/`anonymous` — no separate onboarding/org-creation step is needed client-side:
+  `custom:orgId`/`custom:role` land in the token from `heediq-api`'s PreTokenGeneration trigger
+  (D-077), and `GET /me` works immediately after the first token exchange.
+- `ProtectedRoute` gates `/sources` and `/sources/:sourceId`; unauthenticated visits redirect to `/`.
 
 ## Contracts
-- **Env vars** (build-time, inlined by Vite — see Gotchas): `VITE_API_BASE_URL`, `VITE_WS_BASE_URL`.
-  See `.env.example` for local values; CI resolves per-environment values from SSM (see Deploy).
+- **Env vars** (build-time, inlined by Vite — see Gotchas): `VITE_API_BASE_URL`, `VITE_WS_BASE_URL`,
+  `VITE_COGNITO_DOMAIN` (Hosted UI base URL), `VITE_COGNITO_CLIENT_ID` (public PKCE client, no
+  secret). See `.env.example` for local values; CI resolves per-environment values from SSM (see
+  Deploy).
 - **Shared types**: `@heediq/shared` is the single source of truth for API/DB shapes shared with the
   backend (`07-engineering-standards.md` §1). Don't redefine a backend contract type locally.
+- **Auth callback contract**: redirect URI is always `<origin>/auth/callback`; the Hosted UI client
+  is registered (in `heediq-infra`) with both the deployed origin and `http://localhost:5173` for
+  local dev. PKCE verifier/state are held in `sessionStorage` only for the duration of the redirect
+  round trip and are deleted on the first callback attempt (success or failure) — a callback can
+  never be replayed.
 - **i18n coverage (D-075/D-076)**: every user-facing string — labels, copy, empty/error states,
   toasts, and thrown error messages — is a translation key resolved through `t()`
   (`useTranslation` in components; the exported `i18n` instance in plain modules), never a
   hardcoded literal in JSX/TS. Add new copy to `src/i18n/locales/en/translation.json`, not inline.
 
 ## Dependencies
-- **Upstream**: `heediq-api` (REST + WebSocket endpoints), `@heediq/shared` (types), Cognito (auth),
-  `heediq-infra` (S3 web-assets bucket + CloudFront distribution + SSM params the deploy pipeline reads).
+- **Upstream**: `heediq-api` (REST + WebSocket endpoints, incl. `GET /me` and the PreTokenGeneration
+  trigger, D-077), `@heediq/shared` (types), Cognito Hosted UI (auth, `heediq-infra`'s
+  `FoundationStack`), `heediq-infra` (S3 web-assets bucket + CloudFront distribution + SSM params
+  the deploy pipeline reads, incl. `/heediq/api/cognito-hosted-ui-domain` and
+  `/heediq/api/cognito-client-id`).
 - **Downstream**: none yet (this is the frontend leaf).
 - **Shared surfaces**: `@heediq/shared` version bumps; design tokens (`tokens.css`) if D-008 changes.
 
@@ -68,13 +108,21 @@ installable, offline-capable (D-024).
 - `pnpm run test:pre-pr` = typecheck + test — the pre-PR gate (`05-testing.md`).
 - Component tests cover all declared states (default/hover/focus/disabled/loading/error) per kit
   component: `Button.test.tsx`, `Spinner.test.tsx`, `Card.test.tsx`, `Badge.test.tsx`,
-  `LoadingMark.test.tsx`.
-- No integration/E2E suites yet — add Playwright E2E once auth + at least one real data screen exist.
+  `LoadingMark.test.tsx`, `ErrorState.test.tsx`.
+- Auth flow unit tests: `lib/auth/__tests__/pkce.test.ts`, `cognito-oauth.test.ts` (mocked
+  `fetch`/`window.location`), `token-store.test.ts`, `AuthContext.test.tsx`,
+  `ProtectedRoute.test.tsx`, and `routes/__tests__/HomePage.test.tsx`/`AuthCallbackPage.test.tsx`
+  (all with `cognito-oauth` mocked at the module boundary — no real network/Cognito calls).
+- No integration/E2E suites yet — add Playwright E2E once at least one real data screen exists
+  behind auth.
 
 ## Local dev setup
 1. `pnpm install` (requires `NODE_AUTH_TOKEN` — a GitHub PAT with `read:packages` — to pull
    `@heediq/shared` from GitHub Packages; see `.npmrc`).
-2. Copy `.env.example` to `.env` and adjust if not pointing at the dev API.
+2. Copy `.env.example` to `.env` and adjust if not pointing at the dev API/Cognito Hosted UI
+   (`VITE_COGNITO_DOMAIN`/`VITE_COGNITO_CLIENT_ID` — read the dev values with
+   `aws ssm get-parameter --name /heediq/api/cognito-hosted-ui-domain` /
+   `--name /heediq/api/cognito-client-id`).
 3. `pnpm run dev`.
 4. `pnpm run test:pre-pr` before pushing.
 
@@ -84,11 +132,12 @@ CI/CD via GitHub Actions (`.github/workflows/deploy.yml`), OIDC role assumption 
 
 **Unlike the Lambda/Docker repos, this cannot build once and promote by tag.** `VITE_*` env vars
 are inlined into the JS bundle at build time, so each environment gets its own build: the deploy
-job for each environment reads that environment's `/heediq/api/endpoint-url` and
-`/heediq/api/ws-endpoint-url` from SSM, injects them as `VITE_API_BASE_URL`/`VITE_WS_BASE_URL`,
-runs `pnpm run build`, syncs `dist/` to that environment's web-assets bucket
-(`/heediq/api/web-assets-bucket-name`), and invalidates that environment's CloudFront distribution
-(`/heediq/web/cloudfront-distribution-id`).
+job for each environment reads that environment's `/heediq/api/endpoint-url`,
+`/heediq/api/ws-endpoint-url`, `/heediq/api/cognito-hosted-ui-domain`, and
+`/heediq/api/cognito-client-id` from SSM, injects them as `VITE_API_BASE_URL`/`VITE_WS_BASE_URL`/
+`VITE_COGNITO_DOMAIN`/`VITE_COGNITO_CLIENT_ID`, runs `pnpm run build`, syncs `dist/` to that
+environment's web-assets bucket (`/heediq/api/web-assets-bucket-name`), and invalidates that
+environment's CloudFront distribution (`/heediq/web/cloudfront-distribution-id`).
 
 - `develop` push → deploy-dev (account `276594885933`)
 - `main` push → deploy-staging (account `475790160542`) → deploy-prod (account `438825592314`,

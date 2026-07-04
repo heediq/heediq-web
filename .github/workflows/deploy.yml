@@ -80,12 +80,16 @@ jobs:
           echo "ws_base_url=$(aws ssm get-parameter --name /heediq/api/ws-endpoint-url --query Parameter.Value --output text)" >> "$GITHUB_OUTPUT"
           echo "bucket_name=$(aws ssm get-parameter --name /heediq/api/web-assets-bucket-name --query Parameter.Value --output text)" >> "$GITHUB_OUTPUT"
           echo "distribution_id=$(aws ssm get-parameter --name /heediq/web/cloudfront-distribution-id --query Parameter.Value --output text)" >> "$GITHUB_OUTPUT"
+          echo "cognito_domain=$(aws ssm get-parameter --name /heediq/api/cognito-hosted-ui-domain --query Parameter.Value --output text)" >> "$GITHUB_OUTPUT"
+          echo "cognito_client_id=$(aws ssm get-parameter --name /heediq/api/cognito-client-id --query Parameter.Value --output text)" >> "$GITHUB_OUTPUT"
 
       - name: Build
         run: pnpm run build
         env:
           VITE_API_BASE_URL: ${{ steps.ssm.outputs.api_base_url }}
           VITE_WS_BASE_URL: ${{ steps.ssm.outputs.ws_base_url }}
+          VITE_COGNITO_DOMAIN: ${{ steps.ssm.outputs.cognito_domain }}
+          VITE_COGNITO_CLIENT_ID: ${{ steps.ssm.outputs.cognito_client_id }}
 
       - name: Sync to S3
         run: aws s3 sync dist/ "s3://${{ steps.ssm.outputs.bucket_name }}" --delete
@@ -135,12 +139,16 @@ jobs:
           echo "ws_base_url=$(aws ssm get-parameter --name /heediq/api/ws-endpoint-url --query Parameter.Value --output text)" >> "$GITHUB_OUTPUT"
           echo "bucket_name=$(aws ssm get-parameter --name /heediq/api/web-assets-bucket-name --query Parameter.Value --output text)" >> "$GITHUB_OUTPUT"
           echo "distribution_id=$(aws ssm get-parameter --name /heediq/web/cloudfront-distribution-id --query Parameter.Value --output text)" >> "$GITHUB_OUTPUT"
+          echo "cognito_domain=$(aws ssm get-parameter --name /heediq/api/cognito-hosted-ui-domain --query Parameter.Value --output text)" >> "$GITHUB_OUTPUT"
+          echo "cognito_client_id=$(aws ssm get-parameter --name /heediq/api/cognito-client-id --query Parameter.Value --output text)" >> "$GITHUB_OUTPUT"
 
       - name: Build
         run: pnpm run build
         env:
           VITE_API_BASE_URL: ${{ steps.ssm.outputs.api_base_url }}
           VITE_WS_BASE_URL: ${{ steps.ssm.outputs.ws_base_url }}
+          VITE_COGNITO_DOMAIN: ${{ steps.ssm.outputs.cognito_domain }}
+          VITE_COGNITO_CLIENT_ID: ${{ steps.ssm.outputs.cognito_client_id }}
 
       - name: Sync to S3
         run: aws s3 sync dist/ "s3://${{ steps.ssm.outputs.bucket_name }}" --delete
@@ -190,12 +198,16 @@ jobs:
           echo "ws_base_url=$(aws ssm get-parameter --name /heediq/api/ws-endpoint-url --query Parameter.Value --output text)" >> "$GITHUB_OUTPUT"
           echo "bucket_name=$(aws ssm get-parameter --name /heediq/api/web-assets-bucket-name --query Parameter.Value --output text)" >> "$GITHUB_OUTPUT"
           echo "distribution_id=$(aws ssm get-parameter --name /heediq/web/cloudfront-distribution-id --query Parameter.Value --output text)" >> "$GITHUB_OUTPUT"
+          echo "cognito_domain=$(aws ssm get-parameter --name /heediq/api/cognito-hosted-ui-domain --query Parameter.Value --output text)" >> "$GITHUB_OUTPUT"
+          echo "cognito_client_id=$(aws ssm get-parameter --name /heediq/api/cognito-client-id --query Parameter.Value --output text)" >> "$GITHUB_OUTPUT"
 
       - name: Build
         run: pnpm run build
         env:
           VITE_API_BASE_URL: ${{ steps.ssm.outputs.api_base_url }}
           VITE_WS_BASE_URL: ${{ steps.ssm.outputs.ws_base_url }}
+          VITE_COGNITO_DOMAIN: ${{ steps.ssm.outputs.cognito_domain }}
+          VITE_COGNITO_CLIENT_ID: ${{ steps.ssm.outputs.cognito_client_id }}
 
       - name: Sync to S3
         run: aws s3 sync dist/ "s3://${{ steps.ssm.outputs.bucket_name }}" --delete
