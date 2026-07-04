@@ -6,7 +6,35 @@
   "home": {
     "title": "heediq",
     "subtitle": "Meeting notes, extracted automatically.",
-    "signIn": "Sign in"
+    "emailLabel": "Email",
+    "continue": "Continue",
+    "orDivider": "or",
+    "continueWithSso": "Continue with Google or Microsoft",
+    "backToEmail": "Use a different email",
+    "signUp": {
+      "passwordLabel": "Create a password",
+      "submit": "Create account",
+      "confirmDescription": "Enter the verification code we sent to {{email}}.",
+      "codeLabel": "Verification code",
+      "confirmSubmit": "Verify and continue"
+    },
+    "signIn": {
+      "passwordLabel": "Password",
+      "submit": "Sign in",
+      "forgotPassword": "Forgot password?"
+    },
+    "forgot": {
+      "description": "Enter the code we sent to {{email}} and choose a new password.",
+      "codeLabel": "Verification code",
+      "newPasswordLabel": "New password",
+      "submit": "Reset password"
+    },
+    "link": {
+      "description": "We found an account with this email. Enter the code we sent to {{email}} and set a password to link your sign-in methods.",
+      "codeLabel": "Verification code",
+      "newPasswordLabel": "New password",
+      "submit": "Link account"
+    }
   },
   "sourcesLibrary": {
     "comingSoon": "Sources library — coming next."
@@ -22,7 +50,35 @@
       "retry": "Back to sign in"
     }
   },
+  "settings": {
+    "title": "Settings",
+    "signInMethods": {
+      "title": "Sign-in methods",
+      "description": "Add another way to sign in to this account.",
+      "linkGoogle": "Add Google",
+      "linkMicrosoft": "Add Microsoft"
+    }
+  },
+  "settingsLinkCallback": {
+    "linking": "Linking your account",
+    "error": {
+      "title": "Could not link that account",
+      "description": "Something went wrong completing the link. Please try again.",
+      "retry": "Back to settings"
+    }
+  },
   "errors": {
-    "requestFailed": "Request failed: {{status}}"
+    "requestFailed": "Request failed: {{status}}",
+    "auth": {
+      "generic": "Something went wrong. Please try again.",
+      "NotAuthorizedException": "Incorrect email or password.",
+      "UsernameExistsException": "An account with this email already exists.",
+      "CodeMismatchException": "That code doesn't match. Check it and try again.",
+      "ExpiredCodeException": "That code has expired. Request a new one.",
+      "InvalidPasswordException": "Password must be at least 8 characters.",
+      "InvalidParameterException": "Check your input and try again.",
+      "LimitExceededException": "Too many attempts. Please try again later.",
+      "UserNotFoundException": "Incorrect email or password."
+    }
   }
 }

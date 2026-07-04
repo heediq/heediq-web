@@ -7,6 +7,8 @@ import { HomePage } from './routes/HomePage'
 import { AuthCallbackPage } from './routes/AuthCallbackPage'
 import { SourcesLibraryPage } from './routes/SourcesLibraryPage'
 import { SourceDetailPage } from './routes/SourceDetailPage'
+import { SettingsPage } from './routes/SettingsPage'
+import { SettingsLinkCallbackPage } from './routes/SettingsLinkCallbackPage'
 import { DevUiGalleryPage } from './routes/DevUiGalleryPage'
 
 export function App() {
@@ -30,6 +32,22 @@ export function App() {
               element={
                 <ProtectedRoute>
                   <SourceDetailPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute>
+                  <SettingsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/settings/link-callback"
+              element={
+                <ProtectedRoute>
+                  <SettingsLinkCallbackPage />
                 </ProtectedRoute>
               }
             />
