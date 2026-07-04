@@ -57,7 +57,9 @@ now installed in `heediq-api` per D-084, see `heediq-api` README) so the server 
   used — a fresh federated round trip yields exactly one.
 - Backend calls made from this module: `POST /auth/lookup-email`, `POST /auth/link/request-otp`,
   `POST /auth/link/confirm`, `POST /settings/link/add-provider` (request/response shapes owned by
-  `heediq-api`, not duplicated here).
+  `heediq-api`, not duplicated here). These are the bare resource paths as written at each call
+  site — `apiClient` prepends the real `/api/v1` prefix (D-088); this module never writes `/api/v1`
+  itself.
 
 ## Dependencies
 - **Upstream:** Cognito User Pool + App Client (`heediq-infra` `foundation-stack.ts`) — the
