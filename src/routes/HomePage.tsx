@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
+import type { LookupEmailResponse } from '@heediq/shared'
 import { Button, Input, LoadingMark } from '../components/ui'
 import { useAuth } from '../lib/auth/AuthContext'
 import { apiClient } from '../lib/api-client'
@@ -13,17 +14,6 @@ import {
   initiateAuthPassword,
   signUp,
 } from '../lib/auth/cognito-idp'
-
-/**
- * Local mirror of @heediq/shared's LookupEmailResponse — heediq-web is still pinned to
- * @heediq/shared@^0.2.0 (the 0.3.0 bump is blocked by pnpm's minimumReleaseAge cooldown on the
- * freshly-published package). Safe to inline: this is a read-only response shape, not a
- * boundary we write to. Revert to importing from @heediq/shared once the bump lands.
- */
-interface LookupEmailResponse {
-  exists: boolean
-  passwordSet: boolean | null
-}
 
 type Step =
   | 'email'

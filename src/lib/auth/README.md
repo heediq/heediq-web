@@ -42,9 +42,9 @@ Cognito's `identity_provider` query param, redirecting to `/settings/link-callba
 never passed to `applyTokens`**, since it represents the just-authenticated federated identity, not
 the current user's session. It decodes the returned ID token's `identities` claim (a JSON string
 Cognito attaches to federated sign-ins) to get `{ userId, providerName }`, then calls the backend
-`POST /settings/link/add-provider` (still blocked on the pnpm cooldown as of this writing — see
-`heediq-api`) so the server can call `AdminLinkProviderForUser` with IAM credentials the browser never
-holds.
+`POST /settings/link/add-provider` (not yet built — `@aws-sdk/client-cognito-identity-provider` is
+now installed in `heediq-api` per D-084, see `heediq-api` README) so the server can call
+`AdminLinkProviderForUser` with IAM credentials the browser never holds.
 
 ## Contracts
 - Cognito IdP JSON API: see `cognito-idp.ts` — request/response shapes documented inline per
@@ -71,9 +71,6 @@ Vitest + RTL, colocated in `__tests__/`. `cognito-idp.test.ts` and `cognito-oaut
 `SettingsPage.test.tsx`) mock these modules rather than `fetch` directly. Run: `npx vitest run`.
 
 ## Gotchas & Constraints
-- `heediq-web` is pinned to `@heediq/shared@^0.2.0` (pnpm `minimumReleaseAge` cooldown on `0.3.0`) —
-  `HomePage.tsx` mirrors `LookupEmailResponse` locally rather than importing it; revert once the bump
-  is safe.
 - Never call `applyTokens()` with the result of `exchangeLinkCodeForTokens()` — doing so would
   silently switch the active session to the linked-provider's federated identity instead of the
   original user.
