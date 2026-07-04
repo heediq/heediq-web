@@ -31,31 +31,22 @@ installable, offline-capable (D-024).
   the `{ ok, data }` / `{ ok, error }` API envelope (`@heediq/shared`'s `ApiResponse<T>`).
 - `src/lib/query-client.ts` — shared TanStack Query client (server state; see `07-engineering-standards.md` §7).
 - `src/lib/cn.ts` — `clsx` + `tailwind-merge` className helper used by every kit component.
-- `src/lib/auth/pkce.ts` — `crypto.subtle`-based PKCE verifier/challenge/state generation, no
-  external deps.
-- `src/lib/auth/cognito-oauth.ts` — Hosted UI OAuth 2.0 Authorization Code + PKCE flow:
-  `startLogin()` redirects to `/oauth2/authorize`; `exchangeCodeForTokens()` and `refreshTokens()`
-  call `/oauth2/token`; `logoutUrl()` builds the Hosted UI `/logout` URL. Reads
-  `VITE_COGNITO_DOMAIN`/`VITE_COGNITO_CLIENT_ID`.
-- `src/lib/auth/token-store.ts` — access/ID token held in module memory only (never persisted);
-  the refresh token is the one thing persisted, in `localStorage`, so a page reload can silently
-  re-authenticate instead of forcing a Hosted UI redirect.
-- `src/lib/auth/AuthContext.tsx` — `AuthProvider`/`useAuth()`. On mount, silently refreshes from a
-  stored refresh token (`status: 'loading' → 'authenticated' | 'anonymous'`); exposes
-  `login()` (→ `startLogin()`), `logout()` (clears session, redirects to Hosted UI logout), and
-  `applyTokens()` (called once by `AuthCallbackPage` after a successful code exchange). Also wires
-  `setAccessTokenGetter()` into `api-client.ts` on mount.
-- `src/lib/auth/ProtectedRoute.tsx` — route guard: shows `LoadingMark` while `status === 'loading'`,
-  redirects to `/` when `anonymous`, renders children when `authenticated`.
+- `src/lib/auth/` — full client-direct Cognito auth module (email-first sign-in/sign-up, D-078;
+  Hosted UI SSO; reactive + proactive cross-provider linking, D-079/D-083/D-087). See
+  `src/lib/auth/README.md` for the complete file list, data flow, and contracts — not duplicated
+  here; the highlights: `cognito-idp.ts` (direct Cognito IdP API calls), `cognito-oauth.ts`
+  (Hosted UI PKCE), `jwt.ts` (claims decode, never signature-verified client-side), `pkce.ts`,
+  `token-store.ts`, `AuthContext.tsx`, `ProtectedRoute.tsx`.
 - `src/components/ui/` — the UI kit: `Button`, `Spinner`, `Card`, `Badge` (D-072), `LoadingMark`
-  (D-074), `ErrorState`. Each has its own `README.md` (props/variants/states/usage) per
+  (D-074), `ErrorState`, `Input`. Each has its own `README.md` (props/variants/states/usage) per
   `03-ui-kit.md` §9.
 - `public/brand/` — final logo assets (`heediq-logo.png`, `heediq-badge-bg.svg`,
   `heediq-stubs.svg`), copied verbatim from `design_handoff_heediq_brand/assets/` per D-073.
-- `src/routes/` — screen-level route components. `HomePage` (login entry point + post-login
-  redirect), `AuthCallbackPage` (PKCE code exchange, loading/error branches) are wired up.
-  `SourcesLibraryPage`/`SourceDetailPage` are still placeholders behind `ProtectedRoute`, pending
-  the library/detail build-out.
+- `src/routes/` — screen-level route components. `HomePage` (unified email-first sign-in/sign-up +
+  cross-provider linking entry point, D-078/D-087), `AuthCallbackPage` (PKCE code exchange,
+  loading/error branches), `SettingsPage`/`SettingsLinkCallbackPage` (proactive provider linking,
+  D-083) are wired up. `SourcesLibraryPage`/`SourceDetailPage` are still placeholders behind
+  `ProtectedRoute`, pending the library/detail build-out.
 - `src/routes/DevUiGalleryPage.tsx` — living component gallery (`03-ui-kit.md` §8), only mounted
   in dev builds.
 
@@ -63,18 +54,16 @@ installable, offline-capable (D-024).
 - Server state (API reads/writes) goes through TanStack Query via `apiClient` in `src/lib/api-client.ts`.
 - Client/UI state stays local to components — no separate global store yet; add one only when a
   concrete cross-screen UI-state need appears.
-- **Auth (D-020, D-077)**: `HomePage`'s Sign-in button calls `useAuth().login()` →
-  `startLogin()` redirects the browser to the Cognito Hosted UI (`/oauth2/authorize`, PKCE, scopes
-  `email openid profile`; Hosted UI itself renders the Cognito/Google/Microsoft IdP choices — no
-  custom picker needed client-side). Cognito redirects back to `/auth/callback?code=...&state=...`.
-  `AuthCallbackPage` calls `exchangeCodeForTokens()` (validates `state`, POSTs to `/oauth2/token`
-  with the PKCE verifier), then `useAuth().applyTokens()` stores the session and the app navigates
-  to `/sources`. On any failure (Hosted UI `error` param, state mismatch, failed token exchange) it
-  renders the kit `ErrorState` with a "Back to sign in" retry. On every reload, `AuthProvider`
-  silently calls `refreshTokens()` with the persisted refresh token before deciding
-  `authenticated`/`anonymous` — no separate onboarding/org-creation step is needed client-side:
-  `custom:orgId`/`custom:role` land in the token from `heediq-api`'s PreTokenGeneration trigger
-  (D-077), and `GET /me` works immediately after the first token exchange.
+- **Auth (D-020, D-077, D-078–D-087)**: `HomePage` is the unified email-first sign-in/sign-up
+  entry point — full flow (native sign-up/sign-in, SSO via Hosted UI, reactive cross-provider
+  linking) is documented in `src/lib/auth/README.md`, not duplicated here. SSO redirects go through
+  `/auth/callback` (PKCE code exchange, `AuthCallbackPage`); proactive provider linking from
+  `SettingsPage` goes through `/settings/link-callback` (`SettingsLinkCallbackPage`). On every
+  reload, `AuthProvider` silently calls `refreshTokens()` with the persisted refresh token before
+  deciding `authenticated`/`anonymous` — no separate onboarding/org-creation step is needed
+  client-side: `custom:orgId`/`custom:role` land in the token from `heediq-api`'s
+  PreTokenGeneration trigger (D-077), and `GET /me` works immediately after the first token
+  exchange.
 - `ProtectedRoute` gates `/sources` and `/sources/:sourceId`; unauthenticated visits redirect to `/`.
 
 ## Contracts
@@ -108,11 +97,13 @@ installable, offline-capable (D-024).
 - `pnpm run test:pre-pr` = typecheck + test — the pre-PR gate (`05-testing.md`).
 - Component tests cover all declared states (default/hover/focus/disabled/loading/error) per kit
   component: `Button.test.tsx`, `Spinner.test.tsx`, `Card.test.tsx`, `Badge.test.tsx`,
-  `LoadingMark.test.tsx`, `ErrorState.test.tsx`.
-- Auth flow unit tests: `lib/auth/__tests__/pkce.test.ts`, `cognito-oauth.test.ts` (mocked
-  `fetch`/`window.location`), `token-store.test.ts`, `AuthContext.test.tsx`,
-  `ProtectedRoute.test.tsx`, and `routes/__tests__/HomePage.test.tsx`/`AuthCallbackPage.test.tsx`
-  (all with `cognito-oauth` mocked at the module boundary — no real network/Cognito calls).
+  `LoadingMark.test.tsx`, `ErrorState.test.tsx`, `Input.test.tsx`.
+- Auth flow unit tests (see `src/lib/auth/README.md` for the full breakdown): `pkce.test.ts`,
+  `cognito-oauth.test.ts`, `cognito-idp.test.ts`, `jwt.test.ts`, `token-store.test.ts`,
+  `AuthContext.test.tsx`, `ProtectedRoute.test.tsx`, and `routes/__tests__/HomePage.test.tsx`/
+  `AuthCallbackPage.test.tsx`/`SettingsPage.test.tsx`/`SettingsLinkCallbackPage.test.tsx` (all with
+  `cognito-idp`/`cognito-oauth` mocked at the module boundary — no real network/Cognito calls).
+- 19 test files / 83 tests total (`pnpm run test`).
 - No integration/E2E suites yet — add Playwright E2E once at least one real data screen exists
   behind auth.
 
