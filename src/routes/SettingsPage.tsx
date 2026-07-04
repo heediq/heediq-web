@@ -7,7 +7,7 @@ export function SettingsPage() {
   const { t } = useTranslation()
 
   return (
-    <div className="flex min-h-screen flex-col items-center gap-6 p-4">
+    <div className="flex flex-1 flex-col items-center gap-6 p-4">
       <div className="flex w-full max-w-sm flex-col gap-4 pt-16">
         <h1 className="text-h1">{t('settings.title')}</h1>
 

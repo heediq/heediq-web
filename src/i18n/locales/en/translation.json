@@ -37,6 +37,10 @@
       "submit": "Link account"
     }
   },
+  "nav": {
+    "settings": "Settings",
+    "logout": "Log out"
+  },
   "sourcesLibrary": {
     "comingSoon": "Sources library — coming next."
   },

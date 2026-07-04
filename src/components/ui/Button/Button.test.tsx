@@ -1,4 +1,6 @@
 import { render, screen } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
 import userEvent from '@testing-library/user-event'
 import { Button } from './Button'
@@ -33,5 +35,15 @@ describe('Button', () => {
     )
     await userEvent.click(screen.getByRole('button', { name: 'Save' }))
     expect(onClick).not.toHaveBeenCalled()
+  })
+
+  it('renders as its child element via asChild without crashing on Slot child count', () => {
+    render(
+      <Button asChild variant="ghost">
+        <Link to="/sources">View sources</Link>
+      </Button>,
+      { wrapper: MemoryRouter },
+    )
+    expect(screen.getByRole('link', { name: 'View sources' })).toHaveAttribute('href', '/sources')
   })
 })

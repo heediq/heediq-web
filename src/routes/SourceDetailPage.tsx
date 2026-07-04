@@ -6,7 +6,7 @@ export function SourceDetailPage() {
   const { t } = useTranslation()
 
   return (
-    <div className="flex min-h-screen items-center justify-center">
+    <div className="flex flex-1 items-center justify-center">
       <p className="text-body text-text-secondary">{t('sourceDetail.comingSoon', { sourceId })}</p>
     </div>
   )
