@@ -1,5 +1,5 @@
 import { Bell, Mic } from 'lucide-react'
-import { Button, Card, Spinner } from '../components/ui'
+import { Badge, Button, Card, LoadingMark, Spinner } from '../components/ui'
 
 export function DevUiGalleryPage() {
   return (
@@ -42,6 +42,24 @@ export function DevUiGalleryPage() {
           </Card.Header>
           <Card.Content>3 requirements, 2 open questions extracted.</Card.Content>
         </Card>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-h2">Badge</h2>
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge tone="neutral">queued</Badge>
+          <Badge tone="active">transcribing</Badge>
+          <Badge tone="success">done</Badge>
+          <Badge tone="danger">failed</Badge>
+        </div>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-h2">LoadingMark</h2>
+        <div className="flex flex-wrap items-center gap-8">
+          <LoadingMark size="lg" tone="gradient" aria-label="Loading sources" />
+          <LoadingMark size="sm" aria-label="Loading" />
+        </div>
       </section>
     </div>
   )
