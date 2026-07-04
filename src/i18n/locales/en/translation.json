@@ -1,7 +1,8 @@
 {
   "common": {
     "loading": "Loading",
-    "retry": "Retry"
+    "retry": "Retry",
+    "checkingSession": "Checking your session"
   },
   "home": {
     "title": "heediq",
