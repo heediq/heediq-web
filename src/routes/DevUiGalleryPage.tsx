@@ -1,5 +1,5 @@
 import { Bell, Mic } from 'lucide-react'
-import { Badge, Button, Card, ErrorState, LoadingMark, Spinner } from '../components/ui'
+import { Badge, Button, Card, ErrorState, Input, LoadingMark, Spinner } from '../components/ui'
 
 export function DevUiGalleryPage() {
   return (
@@ -59,6 +59,16 @@ export function DevUiGalleryPage() {
         <div className="flex flex-wrap items-center gap-8">
           <LoadingMark size="lg" tone="gradient" aria-label="Loading sources" />
           <LoadingMark size="sm" aria-label="Loading" />
+        </div>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-h2">Input</h2>
+        <div className="flex max-w-sm flex-col gap-4">
+          <Input label="Email" placeholder="you@company.com" />
+          <Input label="Email" hint="We'll never share this" />
+          <Input label="Email" error="Enter a valid email address" defaultValue="not-an-email" />
+          <Input label="Email" disabled defaultValue="disabled@company.com" />
         </div>
       </section>
 

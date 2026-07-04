@@ -5,9 +5,15 @@ const COGNITO_CLIENT_ID = import.meta.env.VITE_COGNITO_CLIENT_ID as string
 
 const VERIFIER_KEY = 'heediq.pkce.verifier'
 const STATE_KEY = 'heediq.pkce.state'
+const LINK_VERIFIER_KEY = 'heediq.pkce.link.verifier'
+const LINK_STATE_KEY = 'heediq.pkce.link.state'
 
 function redirectUri(): string {
   return `${window.location.origin}/auth/callback`
+}
+
+function linkRedirectUri(): string {
+  return `${window.location.origin}/settings/link-callback`
 }
 
 export async function startLogin(): Promise<void> {
@@ -26,6 +32,36 @@ export async function startLogin(): Promise<void> {
     code_challenge: challenge,
     code_challenge_method: 'S256',
     state,
+  })
+
+  window.location.assign(`${COGNITO_DOMAIN}/oauth2/authorize?${params.toString()}`)
+}
+
+export type LinkableProvider = 'Google' | 'Microsoft'
+
+/**
+ * Proactive linking (D-079/D-083): a provider the current user has never signed into has no
+ * federated identity in Cognito yet, so we need one fresh Hosted-UI round trip through it before
+ * AdminLinkProviderForUser can run server-side. This lands on its own /settings/link-callback
+ * route (D-083) rather than reusing /auth/callback, so it gets its own PKCE storage keys.
+ */
+export async function startProviderLink(provider: LinkableProvider): Promise<void> {
+  const verifier = generateCodeVerifier()
+  const state = generateState()
+  const challenge = await generateCodeChallenge(verifier)
+
+  sessionStorage.setItem(LINK_VERIFIER_KEY, verifier)
+  sessionStorage.setItem(LINK_STATE_KEY, state)
+
+  const params = new URLSearchParams({
+    client_id: COGNITO_CLIENT_ID,
+    response_type: 'code',
+    scope: 'email openid profile',
+    redirect_uri: linkRedirectUri(),
+    code_challenge: challenge,
+    code_challenge_method: 'S256',
+    state,
+    identity_provider: provider,
   })
 
   window.location.assign(`${COGNITO_DOMAIN}/oauth2/authorize?${params.toString()}`)
@@ -66,6 +102,46 @@ export async function exchangeCodeForTokens(searchParams: URLSearchParams): Prom
     client_id: COGNITO_CLIENT_ID,
     code,
     redirect_uri: redirectUri(),
+    code_verifier: verifier,
+  })
+
+  const res = await fetch(`${COGNITO_DOMAIN}/oauth2/token`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: body.toString(),
+  })
+
+  if (!res.ok) throw new OAuthCallbackError('token_exchange_failed')
+
+  return res.json() as Promise<TokenResponse>
+}
+
+/**
+ * Exchanges the /settings/link-callback code for tokens representing the just-authenticated
+ * federated identity — NOT the current user's session. Callers must never pass this result to
+ * applyTokens/token-store; the current session's tokens stay untouched throughout linking.
+ */
+export async function exchangeLinkCodeForTokens(searchParams: URLSearchParams): Promise<TokenResponse> {
+  const verifier = sessionStorage.getItem(LINK_VERIFIER_KEY)
+  const expectedState = sessionStorage.getItem(LINK_STATE_KEY)
+  sessionStorage.removeItem(LINK_VERIFIER_KEY)
+  sessionStorage.removeItem(LINK_STATE_KEY)
+
+  const error = searchParams.get('error')
+  if (error) throw new OAuthCallbackError(searchParams.get('error_description') ?? error)
+
+  const code = searchParams.get('code')
+  const state = searchParams.get('state')
+
+  if (!code) throw new OAuthCallbackError('missing_code')
+  if (!verifier) throw new OAuthCallbackError('missing_verifier')
+  if (!state || !expectedState || state !== expectedState) throw new OAuthCallbackError('state_mismatch')
+
+  const body = new URLSearchParams({
+    grant_type: 'authorization_code',
+    client_id: COGNITO_CLIENT_ID,
+    code,
+    redirect_uri: linkRedirectUri(),
     code_verifier: verifier,
   })
 
