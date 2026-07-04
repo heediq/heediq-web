@@ -1,0 +1,21 @@
+{
+  "common": {
+    "loading": "Loading"
+  },
+  "home": {
+    "title": "heediq",
+    "subtitle": "Home / Listen screen — coming next."
+  },
+  "sourcesLibrary": {
+    "comingSoon": "Sources library — coming next."
+  },
+  "sourceDetail": {
+    "comingSoon": "Source detail ({{sourceId}}) — coming next."
+  },
+  "authCallback": {
+    "notWiredUp": "Auth callback — Cognito flow not wired up yet."
+  },
+  "errors": {
+    "requestFailed": "Request failed: {{status}}"
+  }
+}

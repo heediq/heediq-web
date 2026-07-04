@@ -1,4 +1,5 @@
 import { cva, type VariantProps } from 'class-variance-authority'
+import { useTranslation } from 'react-i18next'
 import { cn } from '../../../lib/cn'
 
 const sizePx = {
@@ -30,8 +31,9 @@ export function LoadingMark({
   size,
   tone = 'flat',
   className,
-  'aria-label': ariaLabel = 'Loading',
+  'aria-label': ariaLabel,
 }: LoadingMarkProps) {
+  const { t } = useTranslation()
   const dimension = sizePx[size ?? 'lg']
   const gradientId = tone === 'gradient' ? `heediq-loader-gradient-${++gradientIdCounter}` : undefined
   const fill = gradientId ? `url(#${gradientId})` : '#F0A93B'
@@ -43,7 +45,7 @@ export function LoadingMark({
       height={dimension}
       xmlns="http://www.w3.org/2000/svg"
       role="status"
-      aria-label={ariaLabel}
+      aria-label={ariaLabel ?? t('common.loading')}
       className={cn(wrapperVariants({ size }), className)}
     >
       {gradientId ? (

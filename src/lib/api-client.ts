@@ -1,3 +1,5 @@
+import { i18n } from '../i18n/config'
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string
 const WS_BASE_URL = import.meta.env.VITE_WS_BASE_URL as string
 
@@ -24,7 +26,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
   if (!res.ok) {
     const body = await res.json().catch(() => null)
-    throw new Error(body?.error?.message ?? `Request failed: ${res.status}`)
+    throw new Error(body?.error?.message ?? i18n.t('errors.requestFailed', { status: res.status }))
   }
 
   return res.json() as Promise<T>

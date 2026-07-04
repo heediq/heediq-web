@@ -9,7 +9,13 @@ installable, offline-capable (D-024).
 ## Key Files
 - `src/App.tsx` — route table (`/`, `/auth/callback`, `/sources`, `/sources/:sourceId`, and
   `/dev/ui` gated behind `import.meta.env.DEV`) wrapped in `QueryClientProvider` + `BrowserRouter`.
-- `src/main.tsx` — React root, imports `src/styles/globals.css`.
+- `src/main.tsx` — React root, imports `src/i18n/config` and `src/styles/globals.css`.
+- `src/i18n/config.ts` — initializes `react-i18next`/`i18next` synchronously with bundled resources
+  (`initAsync: false`) so `t()` works both inside components (`useTranslation`) and in plain modules
+  (`api-client.ts`) with no loading gap. D-075/D-076.
+- `src/i18n/locales/en/translation.json` — the single default namespace; all keys nested by
+  screen/module (`home.*`, `sourcesLibrary.*`, `errors.*`, `common.*`). Split into per-feature
+  namespaces only if this file grows unwieldy.
 - `src/styles/tokens.css` — CSS custom properties for the D-008 design tokens (colors, exact hex
   values) plus the D-072 status/semantic tokens (`success`, `danger`, `accent-bg`/`accent-border`
   for in-progress states). No `warning`/`info` tokens — no design currently calls for them.
@@ -46,6 +52,10 @@ installable, offline-capable (D-024).
   See `.env.example` for local values; CI resolves per-environment values from SSM (see Deploy).
 - **Shared types**: `@heediq/shared` is the single source of truth for API/DB shapes shared with the
   backend (`07-engineering-standards.md` §1). Don't redefine a backend contract type locally.
+- **i18n coverage (D-075/D-076)**: every user-facing string — labels, copy, empty/error states,
+  toasts, and thrown error messages — is a translation key resolved through `t()`
+  (`useTranslation` in components; the exported `i18n` instance in plain modules), never a
+  hardcoded literal in JSX/TS. Add new copy to `src/i18n/locales/en/translation.json`, not inline.
 
 ## Dependencies
 - **Upstream**: `heediq-api` (REST + WebSocket endpoints), `@heediq/shared` (types), Cognito (auth),
@@ -92,3 +102,11 @@ runs `pnpm run build`, syncs `dist/` to that environment's web-assets bucket
   through `tailwind.config.ts`, not ad-hoc `dark:` utilities (see `branding.md`).
 - **No bespoke styling in feature/route code** (`03-ui-kit.md` golden rule) — if a screen needs a
   visual element the kit doesn't have, add it to `src/components/ui/` first.
+- **`api-client.ts` calls `i18n.t()` directly, not the `useTranslation` hook** — it runs outside the
+  React tree, so it can't subscribe to a hook. This only re-renders correctly on language change
+  inside components; a language switch won't retroactively translate an already-thrown error, which
+  is fine since errors are ephemeral. `src/i18n/config.ts` initializes synchronously specifically so
+  this direct `t()` call always has resources loaded, with no async gap to guard against.
+- **`DevUiGalleryPage` example content (e.g. "Weekly sync — Jul 2") is intentionally left as literal
+  English**, not translation keys — it's a dev-only tool gated behind `import.meta.env.DEV` and never
+  ships to real users, so it's outside D-075's user-facing-text scope.
