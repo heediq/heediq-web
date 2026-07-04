@@ -43,6 +43,15 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, asChild = false, loading = false, disabled, children, ...props }, ref) => {
     const Comp = asChild ? Slot : 'button'
 
+    if (asChild) {
+      // Slot requires exactly one element child — never inject the loading spinner alongside it.
+      return (
+        <Comp ref={ref} className={cn(buttonVariants({ variant, size }), className)} {...props}>
+          {children}
+        </Comp>
+      )
+    }
+
     return (
       <Comp
         ref={ref}

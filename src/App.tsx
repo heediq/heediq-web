@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { queryClient } from './lib/query-client'
 import { AuthProvider } from './lib/auth/AuthContext'
 import { ProtectedRoute } from './lib/auth/ProtectedRoute'
+import { AppShell } from './components/layout/AppShell'
 import { HomePage } from './routes/HomePage'
 import { AuthCallbackPage } from './routes/AuthCallbackPage'
 import { SourcesLibraryPage } from './routes/SourcesLibraryPage'
@@ -23,7 +24,9 @@ export function App() {
               path="/sources"
               element={
                 <ProtectedRoute>
-                  <SourcesLibraryPage />
+                  <AppShell>
+                    <SourcesLibraryPage />
+                  </AppShell>
                 </ProtectedRoute>
               }
             />
@@ -31,7 +34,9 @@ export function App() {
               path="/sources/:sourceId"
               element={
                 <ProtectedRoute>
-                  <SourceDetailPage />
+                  <AppShell>
+                    <SourceDetailPage />
+                  </AppShell>
                 </ProtectedRoute>
               }
             />
@@ -39,7 +44,9 @@ export function App() {
               path="/settings"
               element={
                 <ProtectedRoute>
-                  <SettingsPage />
+                  <AppShell>
+                    <SettingsPage />
+                  </AppShell>
                 </ProtectedRoute>
               }
             />
