@@ -51,7 +51,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         aria-busy={loading || undefined}
         {...props}
       >
-        {loading ? <Spinner size={size === 'lg' ? 'md' : 'sm'} aria-label="Loading" /> : null}
+        {loading ? <Spinner size={size === 'lg' ? 'md' : 'sm'} /> : null}
         {children}
       </Comp>
     )
