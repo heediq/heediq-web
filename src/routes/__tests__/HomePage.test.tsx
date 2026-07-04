@@ -179,14 +179,16 @@ describe('HomePage', () => {
   })
 
   it('routes a federated-only account to the non-disclosing linking step and sends a code', async () => {
-    postMock.mockResolvedValue({ exists: true, passwordSet: false })
-    forgotPassword.mockResolvedValue(undefined)
+    postMock.mockResolvedValueOnce({ exists: true, passwordSet: false })
+    postMock.mockResolvedValueOnce({ sent: true })
 
     renderHome()
     await screen.findByLabelText('Email')
     await submitEmailStep('federated@heediq.com')
 
-    await waitFor(() => expect(forgotPassword).toHaveBeenCalledWith('federated@heediq.com'))
+    await waitFor(() =>
+      expect(postMock).toHaveBeenCalledWith('/auth/link/request-otp', { email: 'federated@heediq.com' }),
+    )
     expect(
       await screen.findByText(/We found an account with this email/),
     ).toBeInTheDocument()
@@ -194,7 +196,7 @@ describe('HomePage', () => {
 
   it('submits the link-confirm request with the code and new password', async () => {
     postMock.mockResolvedValueOnce({ exists: true, passwordSet: false })
-    forgotPassword.mockResolvedValue(undefined)
+    postMock.mockResolvedValueOnce({ sent: true })
     postMock.mockResolvedValueOnce(undefined)
     initiateAuthPassword.mockResolvedValue({
       accessToken: 'at',

@@ -82,7 +82,7 @@ export function HomePage() {
       } else if (result.passwordSet) {
         setStep('signIn')
       } else {
-        await forgotPassword(email)
+        await apiClient.post('/auth/link/request-otp', { email })
         setStep('linkCode')
       }
     } catch {
