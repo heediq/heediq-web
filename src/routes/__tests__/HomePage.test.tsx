@@ -20,8 +20,6 @@ vi.mock('../../lib/api-client', () => ({
   setAccessTokenGetter: vi.fn(),
 }))
 
-const signUp = vi.fn()
-const confirmSignUp = vi.fn()
 const forgotPassword = vi.fn()
 const confirmForgotPassword = vi.fn()
 const initiateAuthPassword = vi.fn()
@@ -31,8 +29,6 @@ vi.mock('../../lib/auth/cognito-idp', async () => {
   )
   return {
     ...actual,
-    signUp: (...args: unknown[]) => signUp(...args),
-    confirmSignUp: (...args: unknown[]) => confirmSignUp(...args),
     forgotPassword: (...args: unknown[]) => forgotPassword(...args),
     confirmForgotPassword: (...args: unknown[]) => confirmForgotPassword(...args),
     initiateAuthPassword: (...args: unknown[]) => initiateAuthPassword(...args),
@@ -62,8 +58,6 @@ describe('HomePage', () => {
     refreshTokens.mockReset()
     startLogin.mockReset()
     postMock.mockReset()
-    signUp.mockReset()
-    confirmSignUp.mockReset()
     forgotPassword.mockReset()
     confirmForgotPassword.mockReset()
     initiateAuthPassword.mockReset()
@@ -92,21 +86,38 @@ describe('HomePage', () => {
     await waitFor(() => expect(screen.getByText('sources library')).toBeInTheDocument())
   })
 
-  it('routes an unknown email to the sign-up form', async () => {
-    postMock.mockResolvedValue({ exists: false, passwordSet: null })
+  it('routes a brand-new email to the shared verify+password flow and sends a code (D-089)', async () => {
+    postMock.mockResolvedValueOnce({ exists: false, passwordSet: null })
+    postMock.mockResolvedValueOnce({ sent: true })
+
     renderHome()
     await screen.findByLabelText('Email')
-
     await submitEmailStep('new@heediq.com')
 
-    await waitFor(() => expect(screen.getByLabelText('Create a password')).toBeInTheDocument())
-    expect(postMock).toHaveBeenCalledWith('/auth/lookup-email', { email: 'new@heediq.com' })
+    await waitFor(() =>
+      expect(postMock).toHaveBeenCalledWith('/auth/link/request-otp', { email: 'new@heediq.com' }),
+    )
+    expect(await screen.findByText(/Enter the code we sent to new@heediq.com/)).toBeInTheDocument()
   })
 
-  it('completes sign-up: create account -> confirm code -> signed in', async () => {
-    postMock.mockResolvedValue({ exists: false, passwordSet: null })
-    signUp.mockResolvedValue({ userConfirmed: false })
-    confirmSignUp.mockResolvedValue(undefined)
+  it('routes an existing federated-only email to the same verify+password flow (the reported bug)', async () => {
+    postMock.mockResolvedValueOnce({ exists: true, passwordSet: false })
+    postMock.mockResolvedValueOnce({ sent: true })
+
+    renderHome()
+    await screen.findByLabelText('Email')
+    await submitEmailStep('federated@heediq.com')
+
+    await waitFor(() =>
+      expect(postMock).toHaveBeenCalledWith('/auth/link/request-otp', { email: 'federated@heediq.com' }),
+    )
+    expect(await screen.findByText(/Enter the code we sent to federated@heediq.com/)).toBeInTheDocument()
+  })
+
+  it('completes verify -> set password -> signed in, using a single shared component', async () => {
+    postMock.mockResolvedValueOnce({ exists: false, passwordSet: null })
+    postMock.mockResolvedValueOnce({ sent: true }) // request-otp (sent by the shared component)
+    postMock.mockResolvedValueOnce(undefined) // link/confirm
     initiateAuthPassword.mockResolvedValue({
       accessToken: 'at',
       idToken: 'it',
@@ -118,14 +129,23 @@ describe('HomePage', () => {
     await screen.findByLabelText('Email')
     await submitEmailStep('new@heediq.com')
 
-    await userEvent.type(await screen.findByLabelText('Create a password'), 'Password123!')
-    await userEvent.click(screen.getByRole('button', { name: 'Create account' }))
-    expect(signUp).toHaveBeenCalledWith('new@heediq.com', 'Password123!')
-
     await userEvent.type(await screen.findByLabelText('Verification code'), '123456')
-    await userEvent.click(screen.getByRole('button', { name: 'Verify and continue' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Continue' }))
 
-    await waitFor(() => expect(confirmSignUp).toHaveBeenCalledWith('new@heediq.com', '123456'))
+    await userEvent.type(await screen.findByLabelText('Create a password'), 'Password123!')
+    await userEvent.type(screen.getByLabelText('Confirm password'), 'Password123!')
+    await userEvent.click(screen.getByRole('button', { name: 'Set password' }))
+
+    await waitFor(() =>
+      expect(postMock).toHaveBeenCalledWith('/auth/link/confirm', {
+        email: 'new@heediq.com',
+        code: '123456',
+        newPassword: 'Password123!',
+      }),
+    )
+    await waitFor(() =>
+      expect(initiateAuthPassword).toHaveBeenCalledWith('new@heediq.com', 'Password123!'),
+    )
     await waitFor(() => expect(screen.getByText('sources library')).toBeInTheDocument())
   })
 
@@ -176,50 +196,5 @@ describe('HomePage', () => {
 
     await waitFor(() => expect(forgotPassword).toHaveBeenCalledWith('existing@heediq.com'))
     expect(await screen.findByLabelText('New password')).toBeInTheDocument()
-  })
-
-  it('routes a federated-only account to the non-disclosing linking step and sends a code', async () => {
-    postMock.mockResolvedValueOnce({ exists: true, passwordSet: false })
-    postMock.mockResolvedValueOnce({ sent: true })
-
-    renderHome()
-    await screen.findByLabelText('Email')
-    await submitEmailStep('federated@heediq.com')
-
-    await waitFor(() =>
-      expect(postMock).toHaveBeenCalledWith('/auth/link/request-otp', { email: 'federated@heediq.com' }),
-    )
-    expect(
-      await screen.findByText(/We found an account with this email/),
-    ).toBeInTheDocument()
-  })
-
-  it('submits the link-confirm request with the code and new password', async () => {
-    postMock.mockResolvedValueOnce({ exists: true, passwordSet: false })
-    postMock.mockResolvedValueOnce({ sent: true })
-    postMock.mockResolvedValueOnce(undefined)
-    initiateAuthPassword.mockResolvedValue({
-      accessToken: 'at',
-      idToken: 'it',
-      refreshToken: 'rt',
-      expiresIn: 3600,
-    })
-
-    renderHome()
-    await screen.findByLabelText('Email')
-    await submitEmailStep('federated@heediq.com')
-
-    await userEvent.type(await screen.findByLabelText('Verification code'), '654321')
-    await userEvent.type(screen.getByLabelText('New password'), 'BrandNewPass1!')
-    await userEvent.click(screen.getByRole('button', { name: 'Link account' }))
-
-    await waitFor(() =>
-      expect(postMock).toHaveBeenCalledWith('/auth/link/confirm', {
-        email: 'federated@heediq.com',
-        code: '654321',
-        newPassword: 'BrandNewPass1!',
-      }),
-    )
-    await waitFor(() => expect(screen.getByText('sources library')).toBeInTheDocument())
   })
 })
