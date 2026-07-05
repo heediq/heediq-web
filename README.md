@@ -78,8 +78,10 @@ installable, offline-capable (D-024).
 ## Contracts
 - **Env vars** (build-time, inlined by Vite — see Gotchas): `VITE_API_BASE_URL`, `VITE_WS_BASE_URL`,
   `VITE_COGNITO_DOMAIN` (Hosted UI base URL), `VITE_COGNITO_CLIENT_ID` (public PKCE client, no
-  secret). See `.env.example` for local values; CI resolves per-environment values from SSM (see
-  Deploy).
+  secret), `VITE_COGNITO_REGION` (region for direct Cognito IdP JSON API calls — `cognito-idp.ts`,
+  D-082; not derivable from `VITE_COGNITO_DOMAIN`, which may be a custom domain in prod; set in CI
+  from `vars.AWS_REGION`, not SSM, since it's the same region the deploy role/CDK stack use). See
+  `.env.example` for local values; CI resolves per-environment values from SSM (see Deploy).
 - **Shared types**: `@heediq/shared` is the single source of truth for API/DB shapes shared with the
   backend (`07-engineering-standards.md` §1). Don't redefine a backend contract type locally.
 - **Auth callback contract**: redirect URI is always `<origin>/auth/callback`; the Hosted UI client
