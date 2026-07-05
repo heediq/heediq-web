@@ -156,8 +156,6 @@ environment's CloudFront distribution (`/heediq/web/cloudfront-distribution-id`)
 - **Tailwind `dark:` variant does not reliably apply exact colors for color-critical components in
   practice** — use the CSS-custom-property token classes (`bg-surface-0`, `text-accent`, etc.) wired
   through `tailwind.config.ts`, not ad-hoc `dark:` utilities (see `branding.md`).
-- **No bespoke styling in feature/route code** (`03-ui-kit.md` golden rule) — if a screen needs a
-  visual element the kit doesn't have, add it to `src/components/ui/` first.
 - **`api-client.ts` calls `i18n.t()` directly, not the `useTranslation` hook** — it runs outside the
   React tree, so it can't subscribe to a hook. This only re-renders correctly on language change
   inside components; a language switch won't retroactively translate an already-thrown error, which

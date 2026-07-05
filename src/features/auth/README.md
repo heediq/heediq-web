@@ -54,7 +54,6 @@ handoff (correct `email` passed in, `onSuccess` wired to the right caller behavi
 
 ## Gotchas & Constraints
 - The two-step (code, then password) structure is a locked decision (D-089), not a UI preference —
-  don't collapse them back into one form even if it looks like less friction; that combined form is
-  exactly what let an unverified password get set in the original bug report.
+  don't collapse them back into one form even if it looks like less friction (see Purpose for why).
 - Don't call `onSuccess` from anywhere except after a successful `POST /auth/link/confirm` — it's the
   only signal callers have that the password is actually set server-side.
