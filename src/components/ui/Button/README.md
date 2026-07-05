@@ -27,6 +27,5 @@ default · hover · active/pressed · focus-visible (accent ring) · disabled ·
 ## Gotchas & Constraints
 - `asChild` renders via Radix `Slot`, which requires exactly one React element child (`React.Children.only`
   under the hood). The component never injects the loading spinner or a `disabled`/`aria-busy` attribute
-  when `asChild` is true — doing so used to add a stray `null` sibling and crash with "Slot failed to
-  slot onto its children" the first time `asChild` was actually used (it had been documented but unused
-  until `TopBar` adopted it). Don't pass `loading` together with `asChild`.
+  when `asChild` is true — doing so adds a stray `null` sibling and crashes with "Slot failed to slot
+  onto its children". Don't pass `loading` together with `asChild`.
