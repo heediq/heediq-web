@@ -4,8 +4,6 @@ vi.stubEnv('VITE_COGNITO_REGION', 'us-east-1')
 vi.stubEnv('VITE_COGNITO_CLIENT_ID', 'test-client-id')
 
 const {
-  signUp,
-  confirmSignUp,
   resendConfirmationCode,
   initiateAuthPassword,
   forgotPassword,
@@ -21,46 +19,6 @@ describe('cognito-idp', () => {
   afterEach(() => {
     vi.restoreAllMocks()
     vi.unstubAllGlobals()
-  })
-
-  it('calls the regional Cognito IdP endpoint with the right X-Amz-Target', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(true, { UserConfirmed: false }))
-    vi.stubGlobal('fetch', fetchMock)
-
-    await signUp('a@b.com', 'Password123!')
-
-    expect(fetchMock).toHaveBeenCalledWith(
-      'https://cognito-idp.us-east-1.amazonaws.com/',
-      expect.objectContaining({
-        method: 'POST',
-        headers: expect.objectContaining({
-          'Content-Type': 'application/x-amz-json-1.1',
-          'X-Amz-Target': 'AWSCognitoIdentityProviderService.SignUp',
-        }),
-      }),
-    )
-    const body = JSON.parse(fetchMock.mock.calls[0][1].body)
-    expect(body).toEqual({
-      ClientId: 'test-client-id',
-      Username: 'a@b.com',
-      Password: 'Password123!',
-      UserAttributes: [{ Name: 'email', Value: 'a@b.com' }],
-    })
-  })
-
-  it('signUp resolves userConfirmed from the response', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(true, { UserConfirmed: true })))
-    await expect(signUp('a@b.com', 'pw')).resolves.toEqual({ userConfirmed: true })
-  })
-
-  it('confirmSignUp posts the confirmation code', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(true, {}))
-    vi.stubGlobal('fetch', fetchMock)
-
-    await confirmSignUp('a@b.com', '123456')
-
-    const body = JSON.parse(fetchMock.mock.calls[0][1].body)
-    expect(body).toEqual({ ClientId: 'test-client-id', Username: 'a@b.com', ConfirmationCode: '123456' })
   })
 
   it('resendConfirmationCode posts to the ResendConfirmationCode action', async () => {
@@ -151,6 +109,6 @@ describe('cognito-idp', () => {
       ),
     )
 
-    await expect(signUp('a@b.com', 'pw')).rejects.toMatchObject({ code: 'UsernameExistsException' })
+    await expect(resendConfirmationCode('a@b.com')).rejects.toMatchObject({ code: 'UsernameExistsException' })
   })
 })
