@@ -12,13 +12,6 @@
     "orDivider": "or",
     "continueWithSso": "Continue with Google or Microsoft",
     "backToEmail": "Use a different email",
-    "signUp": {
-      "passwordLabel": "Create a password",
-      "submit": "Create account",
-      "confirmDescription": "Enter the verification code we sent to {{email}}.",
-      "codeLabel": "Verification code",
-      "confirmSubmit": "Verify and continue"
-    },
     "signIn": {
       "passwordLabel": "Password",
       "submit": "Sign in",
@@ -29,12 +22,19 @@
       "codeLabel": "Verification code",
       "newPasswordLabel": "New password",
       "submit": "Reset password"
-    },
-    "link": {
-      "description": "We found an account with this email. Enter the code we sent to {{email}} and set a password to link your sign-in methods.",
+    }
+  },
+  "auth": {
+    "verify": {
+      "sendingCode": "Sending a code to {{email}}",
+      "sendCodeError": "We couldn't send a code. You can still enter one below if you already have it.",
+      "codeDescription": "Enter the code we sent to {{email}}.",
       "codeLabel": "Verification code",
-      "newPasswordLabel": "New password",
-      "submit": "Link account"
+      "codeSubmit": "Continue",
+      "newPasswordLabel": "Create a password",
+      "confirmPasswordLabel": "Confirm password",
+      "passwordMismatch": "Passwords don't match.",
+      "passwordSubmit": "Set password"
     }
   },
   "nav": {
@@ -61,7 +61,15 @@
       "title": "Sign-in methods",
       "description": "Add another way to sign in to this account.",
       "linkGoogle": "Add Google",
-      "linkMicrosoft": "Add Microsoft"
+      "linkMicrosoft": "Add Microsoft",
+      "setPassword": "Set a password",
+      "active": "Active",
+      "loadError": "Could not load your sign-in methods.",
+      "method": {
+        "COGNITO": "Password",
+        "Google": "Google",
+        "Microsoft": "Microsoft"
+      }
     }
   },
   "settingsLinkCallback": {

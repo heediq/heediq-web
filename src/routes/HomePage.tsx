@@ -4,24 +4,21 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import type { LookupEmailResponse } from '@heediq/shared'
 import { Button, Input, LoadingMark } from '../components/ui'
+import { VerifyAndSetPasswordForm } from '../features/auth/VerifyAndSetPasswordForm'
 import { useAuth } from '../lib/auth/AuthContext'
 import { apiClient } from '../lib/api-client'
 import {
   CognitoIdpError,
   confirmForgotPassword,
-  confirmSignUp,
   forgotPassword,
   initiateAuthPassword,
-  signUp,
 } from '../lib/auth/cognito-idp'
 
 type Step =
   | 'email'
-  | 'signUp'
-  | 'signUpConfirm'
+  | 'verify'
   | 'signIn'
   | 'forgotCode'
-  | 'linkCode'
 
 const KNOWN_AUTH_ERROR_CODES = [
   'NotAuthorizedException',
@@ -77,44 +74,15 @@ export function HomePage() {
     setSubmitting(true)
     try {
       const result = await apiClient.post<LookupEmailResponse>('/auth/lookup-email', { email })
-      if (!result.exists) {
-        setStep('signUp')
-      } else if (result.passwordSet) {
+      if (result.exists && result.passwordSet) {
         setStep('signIn')
       } else {
-        await apiClient.post('/auth/link/request-otp', { email })
-        setStep('linkCode')
+        // Brand-new email or an existing federated-only account — both go through the same
+        // own-verification + set-password flow (D-089); the shared component sends the code.
+        setStep('verify')
       }
     } catch {
       setError(t('errors.auth.generic'))
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
-  async function handleSignUpSubmit(e: FormEvent) {
-    e.preventDefault()
-    setError('')
-    setSubmitting(true)
-    try {
-      await signUp(email, password)
-      setStep('signUpConfirm')
-    } catch (err) {
-      setError(authErrorMessage(err))
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
-  async function handleSignUpConfirmSubmit(e: FormEvent) {
-    e.preventDefault()
-    setError('')
-    setSubmitting(true)
-    try {
-      await confirmSignUp(email, code)
-      await signInWithPassword(email, password)
-    } catch (err) {
-      setError(authErrorMessage(err))
     } finally {
       setSubmitting(false)
     }
@@ -155,20 +123,6 @@ export function HomePage() {
       await signInWithPassword(email, newPassword)
     } catch (err) {
       setError(authErrorMessage(err))
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
-  async function handleLinkCodeSubmit(e: FormEvent) {
-    e.preventDefault()
-    setError('')
-    setSubmitting(true)
-    try {
-      await apiClient.post('/auth/link/confirm', { email, code, newPassword })
-      await signInWithPassword(email, newPassword)
-    } catch {
-      setError(t('errors.auth.generic'))
     } finally {
       setSubmitting(false)
     }
@@ -227,53 +181,12 @@ export function HomePage() {
           </form>
         ) : null}
 
-        {step === 'signUp' ? (
-          <form className="flex flex-col gap-4" onSubmit={(e) => void handleSignUpSubmit(e)}>
-            <Input label={t('home.emailLabel')} type="email" value={email} disabled />
-            <Input
-              label={t('home.signUp.passwordLabel')}
-              type="password"
-              autoComplete="new-password"
-              required
-              minLength={8}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-            {error ? (
-              <p role="alert" className="text-caption text-danger">
-                {error}
-              </p>
-            ) : null}
-            <Button type="submit" variant="primary" loading={submitting}>
-              {t('home.signUp.submit')}
-            </Button>
-            <Button type="button" variant="ghost" onClick={resetToEmailStep}>
-              {t('home.backToEmail')}
-            </Button>
-          </form>
-        ) : null}
-
-        {step === 'signUpConfirm' ? (
-          <form className="flex flex-col gap-4" onSubmit={(e) => void handleSignUpConfirmSubmit(e)}>
-            <p className="text-body text-text-secondary">
-              {t('home.signUp.confirmDescription', { email })}
-            </p>
-            <Input
-              label={t('home.signUp.codeLabel')}
-              autoComplete="one-time-code"
-              required
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-            />
-            {error ? (
-              <p role="alert" className="text-caption text-danger">
-                {error}
-              </p>
-            ) : null}
-            <Button type="submit" variant="primary" loading={submitting}>
-              {t('home.signUp.confirmSubmit')}
-            </Button>
-          </form>
+        {step === 'verify' ? (
+          <VerifyAndSetPasswordForm
+            email={email}
+            onBack={resetToEmailStep}
+            onSuccess={(passwordUsed) => signInWithPassword(email, passwordUsed)}
+          />
         ) : null}
 
         {step === 'signIn' ? (
@@ -330,36 +243,6 @@ export function HomePage() {
             ) : null}
             <Button type="submit" variant="primary" loading={submitting}>
               {t('home.forgot.submit')}
-            </Button>
-          </form>
-        ) : null}
-
-        {step === 'linkCode' ? (
-          <form className="flex flex-col gap-4" onSubmit={(e) => void handleLinkCodeSubmit(e)}>
-            <p className="text-body text-text-secondary">{t('home.link.description', { email })}</p>
-            <Input
-              label={t('home.link.codeLabel')}
-              autoComplete="one-time-code"
-              required
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-            />
-            <Input
-              label={t('home.link.newPasswordLabel')}
-              type="password"
-              autoComplete="new-password"
-              required
-              minLength={8}
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-            />
-            {error ? (
-              <p role="alert" className="text-caption text-danger">
-                {error}
-              </p>
-            ) : null}
-            <Button type="submit" variant="primary" loading={submitting}>
-              {t('home.link.submit')}
             </Button>
           </form>
         ) : null}

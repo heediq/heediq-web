@@ -41,24 +41,6 @@ async function cognitoRequest<T>(action: string, body: Record<string, unknown>):
   return data as T
 }
 
-export async function signUp(email: string, password: string): Promise<{ userConfirmed: boolean }> {
-  const data = await cognitoRequest<{ UserConfirmed: boolean }>('SignUp', {
-    ClientId: COGNITO_CLIENT_ID,
-    Username: email,
-    Password: password,
-    UserAttributes: [{ Name: 'email', Value: email }],
-  })
-  return { userConfirmed: data.UserConfirmed }
-}
-
-export async function confirmSignUp(email: string, code: string): Promise<void> {
-  await cognitoRequest('ConfirmSignUp', {
-    ClientId: COGNITO_CLIENT_ID,
-    Username: email,
-    ConfirmationCode: code,
-  })
-}
-
 export async function resendConfirmationCode(email: string): Promise<void> {
   await cognitoRequest('ResendConfirmationCode', {
     ClientId: COGNITO_CLIENT_ID,

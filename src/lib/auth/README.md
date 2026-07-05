@@ -1,17 +1,23 @@
 # Auth (heediq-web)
 
 ## Purpose
-Client-direct Cognito authentication for the unified email-first sign-in/sign-up screen (D-078,
-D-081) plus reactive and proactive cross-provider account linking (D-079). Per D-082, the app talks
-to Cognito directly wherever Cognito's own public APIs allow it — no backend round trip for
-sign-up/sign-in/password-reset — keeping the backend surface minimal.
+Client-direct Cognito authentication for the unified email-first sign-in screen (D-078, D-081) plus
+own-verification account setup and linking (D-089) and proactive cross-provider linking (D-079). Per
+D-082, the app talks to Cognito directly wherever Cognito's own public APIs allow it — no backend
+round trip for sign-in/password-reset — keeping the backend surface minimal. Ownership of the email
+is always proven by Heediq's own emailed code (D-089/D-090), never inferred from an IdP's asserted
+`email_verified` — this is what the shared `VerifyAndSetPasswordForm` component
+(`src/features/auth/README.md`) enforces for every entry point that needs a password set.
 
 ## Key Files
 - `cognito-idp.ts` — direct `fetch()` calls to Cognito's unauthenticated IdP JSON API
-  (`SignUp`, `ConfirmSignUp`, `ResendConfirmationCode`, `InitiateAuth` (`USER_PASSWORD_AUTH`),
-  `ForgotPassword`, `ConfirmForgotPassword`). No SDK, no IAM credentials — only the User Pool Client
-  ID is needed. Throws `CognitoIdpError` with the bare exception name (namespaced `__type` split on
-  `#`) so callers can map it to a user-facing message.
+  (`ResendConfirmationCode`, `InitiateAuth` (`USER_PASSWORD_AUTH`), `ForgotPassword`,
+  `ConfirmForgotPassword`). No SDK, no IAM credentials — only the User Pool Client ID is needed.
+  Throws `CognitoIdpError` with the bare exception name (namespaced `__type` split on `#`) so callers
+  can map it to a user-facing message. Does **not** export `signUp`/`confirmSignUp` (removed under
+  D-089) — the OTP send/confirm round trip for a new or linking account always goes through
+  `heediq-api`'s `POST /auth/link/request-otp` / `POST /auth/link/confirm` instead, since D-089
+  unified native signup and linking onto the same backend flow.
 - `cognito-oauth.ts` — the Hosted-UI PKCE OAuth round trips: `startLogin()`/`exchangeCodeForTokens()`
   for normal login (`/auth/callback`), `startProviderLink()`/`exchangeLinkCodeForTokens()` for
   proactive provider linking (`/settings/link-callback`, D-083), plus `refreshTokens()` and
@@ -28,15 +34,26 @@ sign-up/sign-in/password-reset — keeping the backend surface minimal.
 - `ProtectedRoute.tsx` — redirects to `/` when `status !== 'authenticated'`.
 
 ## Data Flow / How It Works
-**Normal login:** `HomePage` calls `apiClient.post('/auth/lookup-email')` to branch into sign-up,
-sign-in, or (if `passwordSet: false`) the reactive cross-provider linking flow (D-087): it calls
-`POST /auth/link/request-otp` (backend triggers a Cognito-native verification code via `SignUp`/
-`ResendConfirmationCode`, no account-existence enumeration) then, on code entry, `POST
-/auth/link/confirm` with the code + new password — `heediq-api` handles `ConfirmSignUp` +
-`AdminSetUserPassword` + `AdminLinkProviderForUser` server-side. Successful sign-in/sign-up calls
-`cognito-idp.ts` directly, converts the resulting camelCase tokens to the snake_case `TokenResponse`
-shape, and calls `applyTokens()` — the one path that mutates the current session. SSO users go
-through `startLogin()` → Hosted UI → `/auth/callback` → `exchangeCodeForTokens()` → `applyTokens()`.
+**Normal login (D-089):** `HomePage` calls `apiClient.post('/auth/lookup-email')` to branch into
+exactly two steps: `signIn` (an existing account with a password already set) or `verify` — every
+other case (a brand-new email, or an existing federated-only account with no password yet) lands on
+the same `verify` step, which mounts the shared `VerifyAndSetPasswordForm`
+(`src/features/auth/README.md`). That component sends the OTP itself, collects the code, then
+collects the password (create + confirm, two separate screens), and posts `POST
+/auth/link/request-otp` / `POST /auth/link/confirm` — `heediq-api` handles `ConfirmSignUp` +
+`AdminSetUserPassword` + `AdminLinkProviderForUser` server-side, transparently to the caller. There is
+no separate native-signup code path anymore — a first-time email and a "prove you own this email
+before we link it to your Google account" email go through the identical UI and backend calls, which
+is exactly what closed the bug D-089 was written to fix (an unverified direct-to-password prompt with
+no code step). On success, `HomePage` calls `signInWithPassword()`, which calls `cognito-idp.ts`
+directly, converts the resulting camelCase tokens to the snake_case `TokenResponse` shape, and calls
+`applyTokens()` — the one path that mutates the current session. SSO users go through `startLogin()`
+→ Hosted UI → `/auth/callback` → `exchangeCodeForTokens()` → `applyTokens()`.
+
+**Proactive password set (D-089, D-091):** `SettingsPage` mounts the same
+`VerifyAndSetPasswordForm` inline (email read from `GET /me`) when the caller has no `COGNITO`
+method active yet (per the `GET /auth/methods` active-methods list, D-091). `onSuccess` here
+invalidates the methods query rather than signing in, since the user is already authenticated.
 
 **Proactive provider linking (D-079, D-083):** from `SettingsPage`, `startProviderLink(provider)`
 starts a *second*, independent PKCE round trip (its own `heediq.pkce.link.*` sessionStorage keys) with
@@ -55,25 +72,31 @@ now installed in `heediq-api` per D-084, see `heediq-api` README) so the server 
 - `identities` ID-token claim (Cognito-attached on federated sign-in): JSON-stringified array of
   `{ userId, providerName, providerType, issuer, primary, dateCreated }`. Only `identities[0]` is
   used — a fresh federated round trip yields exactly one.
-- Backend calls made from this module: `POST /auth/lookup-email`, `POST /auth/link/request-otp`,
-  `POST /auth/link/confirm`, `POST /settings/link/add-provider` (request/response shapes owned by
-  `heediq-api`, not duplicated here). These are the bare resource paths as written at each call
-  site — `apiClient` prepends the real `/api/v1` prefix (D-088); this module never writes `/api/v1`
-  itself.
+- Backend calls made from this module and `src/features/auth/`: `POST /auth/lookup-email`,
+  `POST /auth/link/request-otp`, `POST /auth/link/confirm`, `POST /settings/link/add-provider`,
+  `GET /auth/methods`, `GET /me` (request/response shapes owned by `heediq-api`, not duplicated
+  here). These are the bare resource paths as written at each call site — `apiClient` prepends the
+  real `/api/v1` prefix (D-088); this module never writes `/api/v1` itself.
 
 ## Dependencies
 - **Upstream:** Cognito User Pool + App Client (`heediq-infra` `foundation-stack.ts`) — the
   `/settings/link-callback` redirect URI must be registered there (D-083) or the Hosted UI rejects
   the redirect.
 - **Downstream:** `HomePage.tsx`, `SettingsPage.tsx`, `SettingsLinkCallbackPage.tsx`,
-  `AuthCallbackPage.tsx`, `api-client.ts` (via `setAccessTokenGetter`).
+  `AuthCallbackPage.tsx`, `api-client.ts` (via `setAccessTokenGetter`),
+  `src/features/auth/VerifyAndSetPasswordForm.tsx` (shares `apiClient`/`CognitoIdpError` from this
+  module; see `src/features/auth/README.md`).
 - **Shared surfaces:** `token-store.ts`'s session shape is relied on by every page above; changing it
   affects all of them.
 
 ## Testing
 Vitest + RTL, colocated in `__tests__/`. `cognito-idp.test.ts` and `cognito-oauth.test.ts` mock
 `fetch`; page-level tests (`HomePage.test.tsx`, `SettingsLinkCallbackPage.test.tsx`,
-`SettingsPage.test.tsx`) mock these modules rather than `fetch` directly. Run: `npx vitest run`.
+`SettingsPage.test.tsx`) mock these modules and `apiClient` rather than `fetch` directly. The shared
+`VerifyAndSetPasswordForm` has its own dedicated test file
+(`src/features/auth/__tests__/VerifyAndSetPasswordForm.test.tsx`) covering its phases in isolation,
+so page-level tests only need to assert the handoff (email prop, `onSuccess`/`onBack` behavior), not
+re-test every phase per page. Run: `npx vitest run`.
 
 ## Gotchas & Constraints
 - Never call `applyTokens()` with the result of `exchangeLinkCodeForTokens()` — doing so would

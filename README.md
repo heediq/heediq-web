@@ -36,11 +36,14 @@ installable, offline-capable (D-024).
 - `src/lib/query-client.ts` — shared TanStack Query client (server state; see `07-engineering-standards.md` §7).
 - `src/lib/cn.ts` — `clsx` + `tailwind-merge` className helper used by every kit component.
 - `src/lib/auth/` — full client-direct Cognito auth module (email-first sign-in/sign-up, D-078;
-  Hosted UI SSO; reactive + proactive cross-provider linking, D-079/D-083/D-087). See
+  Hosted UI SSO; reactive + proactive cross-provider linking, D-079/D-083/D-087/D-089). See
   `src/lib/auth/README.md` for the complete file list, data flow, and contracts — not duplicated
   here; the highlights: `cognito-idp.ts` (direct Cognito IdP API calls), `cognito-oauth.ts`
   (Hosted UI PKCE), `jwt.ts` (claims decode, never signature-verified client-side), `pkce.ts`,
   `token-store.ts`, `AuthContext.tsx`, `ProtectedRoute.tsx`.
+- `src/features/auth/VerifyAndSetPasswordForm.tsx` — the one shared own-verification +
+  set-password component (D-089), reused by `HomePage` (reactive linking + native signup) and
+  `SettingsPage` (proactive "add a sign-in method"). See `src/features/auth/README.md`.
 - `src/components/ui/` — the UI kit: `Button`, `Spinner`, `Card`, `Badge` (D-072), `LoadingMark`
   (D-074), `ErrorState`, `Input`. Each has its own `README.md` (props/variants/states/usage) per
   `03-ui-kit.md` §9.
@@ -58,16 +61,18 @@ installable, offline-capable (D-024).
 - Server state (API reads/writes) goes through TanStack Query via `apiClient` in `src/lib/api-client.ts`.
 - Client/UI state stays local to components — no separate global store yet; add one only when a
   concrete cross-screen UI-state need appears.
-- **Auth (D-020, D-077, D-078–D-087)**: `HomePage` is the unified email-first sign-in/sign-up
-  entry point — full flow (native sign-up/sign-in, SSO via Hosted UI, reactive cross-provider
-  linking) is documented in `src/lib/auth/README.md`, not duplicated here. SSO redirects go through
-  `/auth/callback` (PKCE code exchange, `AuthCallbackPage`); proactive provider linking from
-  `SettingsPage` goes through `/settings/link-callback` (`SettingsLinkCallbackPage`). On every
-  reload, `AuthProvider` silently calls `refreshTokens()` with the persisted refresh token before
-  deciding `authenticated`/`anonymous` — no separate onboarding/org-creation step is needed
-  client-side: `custom:orgId`/`custom:role` land in the token from `heediq-api`'s
-  PreTokenGeneration trigger (D-077), and `GET /me` works immediately after the first token
-  exchange.
+- **Auth (D-020, D-077, D-078–D-091)**: `HomePage` is the unified email-first sign-in/sign-up
+  entry point — full flow (native sign-in, SSO via Hosted UI, own-verification + set-password) is
+  documented in `src/lib/auth/README.md`, not duplicated here. A brand-new email and an existing
+  federated-only email both land on the same shared `VerifyAndSetPasswordForm` (D-089,
+  `src/features/auth/README.md`) — there is no separate sign-up form. SSO redirects go through
+  `/auth/callback` (PKCE code exchange, `AuthCallbackPage`); proactive provider linking/password-set
+  from `SettingsPage` reuses the same shared component inline, plus `/settings/link-callback`
+  (`SettingsLinkCallbackPage`) for OAuth-based provider linking. On every reload, `AuthProvider`
+  silently calls `refreshTokens()` with the persisted refresh token before deciding
+  `authenticated`/`anonymous` — no separate onboarding/org-creation step is needed client-side:
+  `custom:orgId`/`custom:role` land in the token from `heediq-api`'s PreTokenGeneration trigger
+  (D-077, D-090), and `GET /me` works immediately after the first token exchange.
 - `ProtectedRoute` gates `/sources` and `/sources/:sourceId`; unauthenticated visits redirect to `/`.
 
 ## Contracts
@@ -106,10 +111,13 @@ installable, offline-capable (D-024).
   `cognito-oauth.test.ts`, `cognito-idp.test.ts`, `jwt.test.ts`, `token-store.test.ts`,
   `AuthContext.test.tsx`, `ProtectedRoute.test.tsx`, and `routes/__tests__/HomePage.test.tsx`/
   `AuthCallbackPage.test.tsx`/`SettingsPage.test.tsx`/`SettingsLinkCallbackPage.test.tsx` (all with
-  `cognito-idp`/`cognito-oauth` mocked at the module boundary — no real network/Cognito calls).
+  `cognito-idp`/`cognito-oauth`/`api-client` mocked at the module boundary — no real network/Cognito
+  calls). `src/features/auth/__tests__/VerifyAndSetPasswordForm.test.tsx` covers the shared
+  own-verification + set-password component in isolation (all its phases/states) — see
+  `src/features/auth/README.md`.
 - `src/lib/__tests__/api-client.test.ts` (D-088) — asserts the `/api/v1` prefix is applied to every
   request; regression test for the production 404 that motivated D-088.
-- 22 test files / 89 tests total (`pnpm run test`).
+- 23 test files / 95 tests total (`pnpm run test`).
 - No integration/E2E suites yet — add Playwright E2E once at least one real data screen exists
   behind auth.
 

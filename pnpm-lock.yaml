@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@heediq/shared':
-        specifier: ^0.3.0
-        version: 0.3.0
+        specifier: ^0.4.0
+        version: 0.4.0
       '@radix-ui/react-slot':
         specifier: ^1.1.0
         version: 1.3.0(@types/react@18.3.31)(react@18.3.1)
@@ -350,8 +350,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@heediq/shared@0.3.0':
-    resolution: {integrity: sha512-MtYNT6pgbDj42QI/qgzcCMkW7bscoBmIo2du7sN4kb8HK223g94q+FYvGOrR438TRg9Qn2CmrejEaRKqTV4bdw==, tarball: https://npm.pkg.github.com/download/@heediq/shared/0.3.0/9829cad443525c663967fe2ac2b6d0c94c708dea}
+  '@heediq/shared@0.4.0':
+    resolution: {integrity: sha512-I8W+KKdifCSEN7YgmG4Cz5Ywzqdz+1BupjsiJBJyC/zQYDdSbWL9v6MwTOZaLLhgATm/tdpfvzD+srP85juwhQ==, tarball: https://npm.pkg.github.com/download/@heediq/shared/0.4.0/dabb71d2179578c2e6fa0410a3a053c870c749b6}
     engines: {node: '>=22'}
 
   '@jridgewell/gen-mapping@0.3.13':
@@ -1722,7 +1722,7 @@ snapshots:
   '@esbuild/win32-x64@0.21.5':
     optional: true
 
-  '@heediq/shared@0.3.0':
+  '@heediq/shared@0.4.0':
     dependencies:
       zod: 3.25.76
 
