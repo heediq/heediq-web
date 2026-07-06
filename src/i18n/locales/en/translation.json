@@ -35,6 +35,18 @@
       "confirmPasswordLabel": "Confirm password",
       "passwordMismatch": "Passwords don't match.",
       "passwordSubmit": "Set password"
+    },
+    "passwordRequirements": {
+      "title": "Password requirements",
+      "met": "requirement met",
+      "unmet": "requirement not met",
+      "rules": {
+        "minLength": "At least 8 characters",
+        "uppercase": "One uppercase letter",
+        "lowercase": "One lowercase letter",
+        "digit": "One number",
+        "symbol": "One special character"
+      }
     }
   },
   "nav": {
@@ -89,6 +101,7 @@
       "CodeMismatchException": "That code doesn't match. Check it and try again.",
       "ExpiredCodeException": "That code has expired. Request a new one.",
       "InvalidPasswordException": "Password must be at least 8 characters.",
+      "WEAK_PASSWORD": "That password doesn't meet the requirements above.",
       "InvalidParameterException": "Check your input and try again.",
       "LimitExceededException": "Too many attempts. Please try again later.",
       "UserNotFoundException": "Incorrect email or password."

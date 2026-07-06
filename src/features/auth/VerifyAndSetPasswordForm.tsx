@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Button, Input, LoadingMark } from '../../components/ui'
-import { apiClient } from '../../lib/api-client'
+import { isPasswordPolicyCompliant } from '@heediq/shared'
+import { Button, Input, LoadingMark, PasswordRequirements } from '../../components/ui'
+import { apiClient, ApiClientError } from '../../lib/api-client'
 
 // Shared across all three D-089 entry points (reactive login-time linking, native signup,
 // proactive settings linking) — same backend calls, same two-step UI (code, then password;
@@ -49,6 +50,8 @@ export function VerifyAndSetPasswordForm({ email, onSuccess, onBack }: VerifyAnd
     setPhase('password')
   }
 
+  const passwordValid = isPasswordPolicyCompliant(newPassword)
+
   async function handlePasswordSubmit(e: FormEvent) {
     e.preventDefault()
     setError('')
@@ -60,8 +63,16 @@ export function VerifyAndSetPasswordForm({ email, onSuccess, onBack }: VerifyAnd
     try {
       await apiClient.post('/auth/link/confirm', { email, code, newPassword })
       await onSuccess(newPassword)
-    } catch {
-      setError(t('errors.auth.generic'))
+    } catch (err: unknown) {
+      // WEAK_PASSWORD (Cognito's InvalidPasswordException) shouldn't normally happen — the
+      // checklist below blocks submit until every rule is met — but Cognito is the final
+      // authority on its own policy, so a stale/looser client-side check still gets a
+      // specific message instead of the generic one.
+      if (err instanceof ApiClientError && err.code === 'WEAK_PASSWORD') {
+        setError(t('errors.auth.WEAK_PASSWORD'))
+      } else {
+        setError(t('errors.auth.generic'))
+      }
     } finally {
       setSubmitting(false)
     }
@@ -106,21 +117,22 @@ export function VerifyAndSetPasswordForm({ email, onSuccess, onBack }: VerifyAnd
 
   return (
     <form className="flex flex-col gap-4" onSubmit={(e) => void handlePasswordSubmit(e)}>
-      <Input
-        label={t('auth.verify.newPasswordLabel')}
-        type="password"
-        autoComplete="new-password"
-        required
-        minLength={8}
-        value={newPassword}
-        onChange={(e) => setNewPassword(e.target.value)}
-      />
+      <div className="flex flex-col gap-2">
+        <Input
+          label={t('auth.verify.newPasswordLabel')}
+          type="password"
+          autoComplete="new-password"
+          required
+          value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)}
+        />
+        <PasswordRequirements password={newPassword} />
+      </div>
       <Input
         label={t('auth.verify.confirmPasswordLabel')}
         type="password"
         autoComplete="new-password"
         required
-        minLength={8}
         value={confirmPassword}
         onChange={(e) => setConfirmPassword(e.target.value)}
       />
@@ -129,7 +141,7 @@ export function VerifyAndSetPasswordForm({ email, onSuccess, onBack }: VerifyAnd
           {error}
         </p>
       ) : null}
-      <Button type="submit" variant="primary" loading={submitting}>
+      <Button type="submit" variant="primary" loading={submitting} disabled={!passwordValid}>
         {t('auth.verify.passwordSubmit')}
       </Button>
     </form>

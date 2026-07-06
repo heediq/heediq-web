@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { apiClient } from '../api-client'
+import { apiClient, ApiClientError } from '../api-client'
 
 describe('apiClient (D-088 — version prefix regression)', () => {
   let fetchMock: ReturnType<typeof vi.fn>
@@ -28,5 +28,28 @@ describe('apiClient (D-088 — version prefix regression)', () => {
 
     const [url] = fetchMock.mock.calls[0]
     expect(url).toMatch(/\/api\/v1\/me$/)
+  })
+
+  it('throws an ApiClientError carrying the backend error code when the response has one', async () => {
+    fetchMock.mockResolvedValue({
+      ok: false,
+      json: () => Promise.resolve({ ok: false, error: { code: 'WEAK_PASSWORD', message: 'nope' } }),
+    })
+
+    const err = await apiClient.post('/auth/link/confirm', {}).catch((e: unknown) => e)
+    expect(err).toBeInstanceOf(ApiClientError)
+    expect((err as ApiClientError).code).toBe('WEAK_PASSWORD')
+    expect((err as ApiClientError).message).toBe('nope')
+  })
+
+  it('falls back to a generic Error when the response has no error code', async () => {
+    fetchMock.mockResolvedValue({
+      ok: false,
+      json: () => Promise.resolve(null),
+    })
+
+    const err = await apiClient.get('/me').catch((e: unknown) => e)
+    expect(err).not.toBeInstanceOf(ApiClientError)
+    expect(err).toBeInstanceOf(Error)
   })
 })

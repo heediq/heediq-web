@@ -1,5 +1,16 @@
 import { i18n } from '../i18n/config'
 
+/** Mirrors CognitoIdpError (src/lib/auth/cognito-idp.ts) for backend API errors: `code` is our
+ * own ErrorCode (heediq-api/src/lib/errors.ts), e.g. "WEAK_PASSWORD", not a Cognito exception name. */
+export class ApiClientError extends Error {
+  code: string
+
+  constructor(code: string, message: string) {
+    super(message)
+    this.code = code
+  }
+}
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string
 const WS_BASE_URL = import.meta.env.VITE_WS_BASE_URL as string
 
@@ -31,7 +42,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const body = await res.json().catch(() => null)
 
   if (!res.ok || !body?.ok) {
-    throw new Error(body?.error?.message ?? i18n.t('errors.requestFailed', { status: res.status }))
+    if (body?.error?.code) {
+      throw new ApiClientError(body.error.code, body.error.message)
+    }
+    throw new Error(i18n.t('errors.requestFailed', { status: res.status }))
   }
 
   return body.data as T
