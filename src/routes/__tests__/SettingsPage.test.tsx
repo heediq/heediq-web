@@ -90,6 +90,7 @@ describe('SettingsPage', () => {
   it('sets a password via the shared verify+password component and refreshes the methods list', async () => {
     mockMeAndMethods([])
     postMock.mockResolvedValueOnce({ sent: true }) // request-otp, auto-sent by the shared form
+    postMock.mockResolvedValueOnce({ verified: true }) // link/verify-otp
     postMock.mockResolvedValueOnce(undefined) // link/confirm
 
     renderSettings()
@@ -107,7 +108,6 @@ describe('SettingsPage', () => {
     await waitFor(() =>
       expect(postMock).toHaveBeenCalledWith('/auth/link/confirm', {
         email: 'user@heediq.com',
-        code: '123456',
         newPassword: 'Password123!',
       }),
     )
