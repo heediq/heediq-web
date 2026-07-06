@@ -39,17 +39,33 @@ describe('VerifyAndSetPasswordForm', () => {
     )
   })
 
-  it('moves from the code step to the password step without submitting anything yet', async () => {
-    postMock.mockResolvedValue({ sent: true })
+  it('verifies the code against the backend before moving to the password step', async () => {
+    postMock.mockResolvedValueOnce({ sent: true })
+    postMock.mockResolvedValueOnce({ verified: true })
     render(<VerifyAndSetPasswordForm email="a@b.com" onSuccess={vi.fn()} />)
 
     await userEvent.type(await screen.findByLabelText('Verification code'), '123456')
     postMock.mockClear()
     await userEvent.click(screen.getByRole('button', { name: 'Continue' }))
 
+    await waitFor(() =>
+      expect(postMock).toHaveBeenCalledWith('/auth/link/verify-otp', { email: 'a@b.com', code: '123456' }),
+    )
     expect(await screen.findByLabelText('Create a password')).toBeInTheDocument()
     expect(screen.getByLabelText('Confirm password')).toBeInTheDocument()
-    expect(postMock).not.toHaveBeenCalled()
+  })
+
+  it('stays on the code step and shows an error when the code is rejected', async () => {
+    postMock.mockResolvedValueOnce({ sent: true })
+    postMock.mockRejectedValueOnce(new ApiClientError('BAD_REQUEST', 'Invalid or expired verification code'))
+    render(<VerifyAndSetPasswordForm email="a@b.com" onSuccess={vi.fn()} />)
+
+    await userEvent.type(await screen.findByLabelText('Verification code'), '000000')
+    await userEvent.click(screen.getByRole('button', { name: 'Continue' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('That code is incorrect or expired. Please check it and try again.')
+    expect(screen.getByLabelText('Verification code')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Create a password')).not.toBeInTheDocument()
   })
 
   it('disables submit until the password satisfies every policy rule, showing live requirement feedback', async () => {
@@ -89,8 +105,9 @@ describe('VerifyAndSetPasswordForm', () => {
     expect(postMock).not.toHaveBeenCalledWith('/auth/link/confirm', expect.anything())
   })
 
-  it('submits the code and password to link/confirm and calls onSuccess with the new password', async () => {
+  it('submits the password to link/confirm (no code) and calls onSuccess with the new password', async () => {
     postMock.mockResolvedValueOnce({ sent: true })
+    postMock.mockResolvedValueOnce({ verified: true })
     postMock.mockResolvedValueOnce(undefined)
     const onSuccess = vi.fn()
 
@@ -105,7 +122,6 @@ describe('VerifyAndSetPasswordForm', () => {
     await waitFor(() =>
       expect(postMock).toHaveBeenCalledWith('/auth/link/confirm', {
         email: 'a@b.com',
-        code: '123456',
         newPassword: 'Password123!',
       }),
     )
@@ -114,6 +130,7 @@ describe('VerifyAndSetPasswordForm', () => {
 
   it('shows a generic error when link/confirm fails', async () => {
     postMock.mockResolvedValueOnce({ sent: true })
+    postMock.mockResolvedValueOnce({ verified: true })
     postMock.mockRejectedValueOnce(new Error('boom'))
 
     render(<VerifyAndSetPasswordForm email="a@b.com" onSuccess={vi.fn()} />)
@@ -129,6 +146,7 @@ describe('VerifyAndSetPasswordForm', () => {
 
   it('shows a requirements-specific error when the backend rejects the password on policy grounds', async () => {
     postMock.mockResolvedValueOnce({ sent: true })
+    postMock.mockResolvedValueOnce({ verified: true })
     postMock.mockRejectedValueOnce(new ApiClientError('WEAK_PASSWORD', 'Password does not meet the requirements'))
 
     render(<VerifyAndSetPasswordForm email="a@b.com" onSuccess={vi.fn()} />)

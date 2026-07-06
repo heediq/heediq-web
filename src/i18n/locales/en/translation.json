@@ -31,6 +31,7 @@
       "codeDescription": "Enter the code we sent to {{email}}.",
       "codeLabel": "Verification code",
       "codeSubmit": "Continue",
+      "invalidCode": "That code is incorrect or expired. Please check it and try again.",
       "newPasswordLabel": "Create a password",
       "confirmPasswordLabel": "Confirm password",
       "passwordMismatch": "Passwords don't match.",

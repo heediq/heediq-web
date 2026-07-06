@@ -117,6 +117,7 @@ describe('HomePage', () => {
   it('completes verify -> set password -> signed in, using a single shared component', async () => {
     postMock.mockResolvedValueOnce({ exists: false, passwordSet: null })
     postMock.mockResolvedValueOnce({ sent: true }) // request-otp (sent by the shared component)
+    postMock.mockResolvedValueOnce({ verified: true }) // link/verify-otp
     postMock.mockResolvedValueOnce(undefined) // link/confirm
     initiateAuthPassword.mockResolvedValue({
       accessToken: 'at',
@@ -139,7 +140,6 @@ describe('HomePage', () => {
     await waitFor(() =>
       expect(postMock).toHaveBeenCalledWith('/auth/link/confirm', {
         email: 'new@heediq.com',
-        code: '123456',
         newPassword: 'Password123!',
       }),
     )

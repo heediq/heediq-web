@@ -44,10 +44,25 @@ export function VerifyAndSetPasswordForm({ email, onSuccess, onBack }: VerifyAnd
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [email])
 
-  function handleCodeSubmit(e: FormEvent) {
+  // The code screen must not advance until the backend has actually verified it (D-089) —
+  // /auth/link/verify-otp consumes the code via Cognito's ConfirmSignUp, independent of the
+  // password, which is why /auth/link/confirm (called later) no longer takes a code at all.
+  async function handleCodeSubmit(e: FormEvent) {
     e.preventDefault()
     setError('')
-    setPhase('password')
+    setSubmitting(true)
+    try {
+      await apiClient.post('/auth/link/verify-otp', { email, code })
+      setPhase('password')
+    } catch (err: unknown) {
+      if (err instanceof ApiClientError) {
+        setError(t('auth.verify.invalidCode'))
+      } else {
+        setError(t('errors.auth.generic'))
+      }
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const passwordValid = isPasswordPolicyCompliant(newPassword)
@@ -61,7 +76,7 @@ export function VerifyAndSetPasswordForm({ email, onSuccess, onBack }: VerifyAnd
     }
     setSubmitting(true)
     try {
-      await apiClient.post('/auth/link/confirm', { email, code, newPassword })
+      await apiClient.post('/auth/link/confirm', { email, newPassword })
       await onSuccess(newPassword)
     } catch (err: unknown) {
       // WEAK_PASSWORD (Cognito's InvalidPasswordException) shouldn't normally happen — the
@@ -89,7 +104,7 @@ export function VerifyAndSetPasswordForm({ email, onSuccess, onBack }: VerifyAnd
 
   if (phase === 'code') {
     return (
-      <form className="flex flex-col gap-4" onSubmit={handleCodeSubmit}>
+      <form className="flex flex-col gap-4" onSubmit={(e) => void handleCodeSubmit(e)}>
         <p className="text-body text-text-secondary">{t('auth.verify.codeDescription', { email })}</p>
         <Input
           label={t('auth.verify.codeLabel')}
@@ -103,7 +118,7 @@ export function VerifyAndSetPasswordForm({ email, onSuccess, onBack }: VerifyAnd
             {error}
           </p>
         ) : null}
-        <Button type="submit" variant="primary">
+        <Button type="submit" variant="primary" loading={submitting} disabled={!code}>
           {t('auth.verify.codeSubmit')}
         </Button>
         {onBack ? (

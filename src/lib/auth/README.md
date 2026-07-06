@@ -15,9 +15,10 @@ is always proven by Heediq's own emailed code (D-089/D-090), never inferred from
   `ConfirmForgotPassword`). No SDK, no IAM credentials — only the User Pool Client ID is needed.
   Throws `CognitoIdpError` with the bare exception name (namespaced `__type` split on `#`) so callers
   can map it to a user-facing message. Does **not** export `signUp`/`confirmSignUp` (removed under
-  D-089) — the OTP send/confirm round trip for a new or linking account always goes through
-  `heediq-api`'s `POST /auth/link/request-otp` / `POST /auth/link/confirm` instead, since D-089
-  unified native signup and linking onto the same backend flow.
+  D-089) — the OTP send/verify/confirm round trip for a new or linking account always goes through
+  `heediq-api`'s `POST /auth/link/request-otp` / `POST /auth/link/verify-otp` /
+  `POST /auth/link/confirm` instead, since D-089 unified native signup and linking onto the same
+  backend flow.
 - `cognito-oauth.ts` — the Hosted-UI PKCE OAuth round trips: `startLogin()`/`exchangeCodeForTokens()`
   for normal login (`/auth/callback`), `startProviderLink()`/`exchangeLinkCodeForTokens()` for
   proactive provider linking (`/settings/link-callback`, D-083), plus `refreshTokens()` and
@@ -38,10 +39,11 @@ is always proven by Heediq's own emailed code (D-089/D-090), never inferred from
 exactly two steps: `signIn` (an existing account with a password already set) or `verify` — every
 other case (a brand-new email, or an existing federated-only account with no password yet) lands on
 the same `verify` step, which mounts the shared `VerifyAndSetPasswordForm`
-(`src/features/auth/README.md`). That component sends the OTP itself, collects the code, then
-collects the password (create + confirm, two separate screens), and posts `POST
-/auth/link/request-otp` / `POST /auth/link/confirm` — `heediq-api` handles `ConfirmSignUp` +
-`AdminSetUserPassword` + `AdminLinkProviderForUser` server-side, transparently to the caller. There is
+(`src/features/auth/README.md`). That component sends the OTP itself, collects the code and posts
+`POST /auth/link/verify-otp` (backend `ConfirmSignUp` — must succeed before advancing), then
+collects the password (create + confirm, two separate screens) and posts `POST /auth/link/confirm`
+— `heediq-api` handles `AdminSetUserPassword` + `AdminLinkProviderForUser` server-side, transparently
+to the caller. There is
 no separate native-signup code path anymore — a first-time email and a "prove you own this email
 before we link it to your Google account" email go through the identical UI and backend calls, which
 is exactly what closed the bug D-089 was written to fix (an unverified direct-to-password prompt with
@@ -73,7 +75,8 @@ now installed in `heediq-api` per D-084, see `heediq-api` README) so the server 
   `{ userId, providerName, providerType, issuer, primary, dateCreated }`. Only `identities[0]` is
   used — a fresh federated round trip yields exactly one.
 - Backend calls made from this module and `src/features/auth/`: `POST /auth/lookup-email`,
-  `POST /auth/link/request-otp`, `POST /auth/link/confirm`, `POST /settings/link/add-provider`,
+  `POST /auth/link/request-otp`, `POST /auth/link/verify-otp`, `POST /auth/link/confirm`,
+  `POST /settings/link/add-provider`,
   `GET /auth/methods`, `GET /me` (request/response shapes owned by `heediq-api`, not duplicated
   here). These are the bare resource paths as written at each call site — `apiClient` prepends the
   real `/api/v1` prefix (D-088); this module never writes `/api/v1` itself.
