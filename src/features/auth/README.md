@@ -38,19 +38,29 @@ fields; mismatched values error inline without a network call). Final submit cal
 - Backend contract (owned by `heediq-api`, not duplicated here): see `src/lib/auth/README.md` and
   `heediq-api/README.md`'s Contracts section for `POST /auth/link/request-otp` /
   `POST /auth/link/confirm`.
+- The password step shows a live, per-rule requirements checklist (`PasswordRequirements`, driven by
+  `@heediq/shared`'s `PASSWORD_POLICY_RULES`) and disables submit until
+  `isPasswordPolicyCompliant(newPassword)` is true. If `link/confirm` still rejects the password
+  server-side (Cognito `InvalidPasswordException` → `WEAK_PASSWORD`), the form shows a dedicated
+  "doesn't meet the requirements above" message instead of the generic failure message — detected via
+  `err instanceof ApiClientError && err.code === 'WEAK_PASSWORD'`.
 
 ## Dependencies
-- **Upstream:** `apiClient` (`src/lib/api-client.ts`), the `Button`/`Input`/`LoadingMark` UI-kit
-  primitives, `auth.verify.*` i18n keys (`src/i18n/locales/en/translation.json`).
+- **Upstream:** `apiClient` and its `ApiClientError` class (`src/lib/api-client.ts`), the
+  `Button`/`Input`/`LoadingMark`/`PasswordRequirements` UI-kit primitives,
+  `isPasswordPolicyCompliant` / `PASSWORD_POLICY_RULES` (`@heediq/shared`), `auth.verify.*` and
+  `auth.passwordRequirements.*` i18n keys (`src/i18n/locales/en/translation.json`).
 - **Downstream:** `HomePage.tsx`, `SettingsPage.tsx`.
 
 ## Testing
 `__tests__/VerifyAndSetPasswordForm.test.tsx` covers every phase in isolation (OTP-send loading
 state, OTP-send failure still advancing to the code step, code→password transition, password
 mismatch, successful submit calling `onSuccess`, `link/confirm` failure, and the optional back
-button) with `apiClient` mocked. Page-level tests (`HomePage.test.tsx`, `SettingsPage.test.tsx`)
-exercise the same component through the real DOM but don't re-assert every phase — they check the
-handoff (correct `email` passed in, `onSuccess` wired to the right caller behavior).
+button), plus the live password checklist disabling/enabling submit as rules are satisfied and the
+specific `WEAK_PASSWORD` error message on a policy rejection, with `apiClient` mocked. Page-level
+tests (`HomePage.test.tsx`, `SettingsPage.test.tsx`) exercise the same component through the real DOM
+but don't re-assert every phase — they check the handoff (correct `email` passed in, `onSuccess`
+wired to the right caller behavior).
 
 ## Gotchas & Constraints
 - The two-step (code, then password) structure is a locked decision (D-089), not a UI preference —

@@ -2,11 +2,16 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { VerifyAndSetPasswordForm } from '../VerifyAndSetPasswordForm'
+import { ApiClientError } from '../../../lib/api-client'
 
 const postMock = vi.fn()
-vi.mock('../../../lib/api-client', () => ({
-  apiClient: { post: (...args: unknown[]) => postMock(...args) },
-}))
+vi.mock('../../../lib/api-client', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../lib/api-client')>()
+  return {
+    ...actual,
+    apiClient: { post: (...args: unknown[]) => postMock(...args) },
+  }
+})
 
 describe('VerifyAndSetPasswordForm', () => {
   beforeEach(() => {
@@ -45,6 +50,28 @@ describe('VerifyAndSetPasswordForm', () => {
     expect(await screen.findByLabelText('Create a password')).toBeInTheDocument()
     expect(screen.getByLabelText('Confirm password')).toBeInTheDocument()
     expect(postMock).not.toHaveBeenCalled()
+  })
+
+  it('disables submit until the password satisfies every policy rule, showing live requirement feedback', async () => {
+    postMock.mockResolvedValue({ sent: true })
+    render(<VerifyAndSetPasswordForm email="a@b.com" onSuccess={vi.fn()} />)
+
+    await userEvent.type(await screen.findByLabelText('Verification code'), '123456')
+    await userEvent.click(screen.getByRole('button', { name: 'Continue' }))
+
+    const submit = screen.getByRole('button', { name: 'Set password' })
+    expect(submit).toBeDisabled()
+    expect(screen.getByText('At least 8 characters')).toBeInTheDocument()
+
+    const passwordInput = await screen.findByLabelText('Create a password')
+    await userEvent.type(passwordInput, 'weak')
+    expect(submit).toBeDisabled()
+
+    await userEvent.type(passwordInput, 'password1!')
+    expect(submit).toBeDisabled() // still missing an uppercase letter
+
+    await userEvent.type(passwordInput, 'A')
+    expect(submit).not.toBeDisabled()
   })
 
   it('shows a mismatch error and does not submit when the two password fields differ', async () => {
@@ -98,6 +125,21 @@ describe('VerifyAndSetPasswordForm', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Set password' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Something went wrong. Please try again.')
+  })
+
+  it('shows a requirements-specific error when the backend rejects the password on policy grounds', async () => {
+    postMock.mockResolvedValueOnce({ sent: true })
+    postMock.mockRejectedValueOnce(new ApiClientError('WEAK_PASSWORD', 'Password does not meet the requirements'))
+
+    render(<VerifyAndSetPasswordForm email="a@b.com" onSuccess={vi.fn()} />)
+
+    await userEvent.type(await screen.findByLabelText('Verification code'), '123456')
+    await userEvent.click(screen.getByRole('button', { name: 'Continue' }))
+    await userEvent.type(await screen.findByLabelText('Create a password'), 'Password123!')
+    await userEvent.type(screen.getByLabelText('Confirm password'), 'Password123!')
+    await userEvent.click(screen.getByRole('button', { name: 'Set password' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent("That password doesn't meet the requirements above.")
   })
 
   it('renders a back button only when onBack is provided, on the code step', async () => {
