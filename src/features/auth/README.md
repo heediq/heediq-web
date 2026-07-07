@@ -22,13 +22,15 @@ prompt after logging out and re-entering the same email natively — the bug tha
 
 ## Data Flow / How It Works
 On mount, the component calls `POST /auth/link/request-otp` itself (callers never trigger the OTP
-send separately). Three phases: `sendingCode` (brief loading state) → `code` (enter the emailed
+send separately). Four phases: `sendingCode` (brief loading state) → `code` (enter the emailed
 code; submitting calls `POST /auth/link/verify-otp` — only advances to `password` on success,
 otherwise shows an inline error and stays on the code screen) → `password` (create + confirm
-password fields; mismatched values error inline without a network call). Final submit calls `POST
-/auth/link/confirm` with `{ email, newPassword }` (no `code` — it was already consumed by
-`verify-otp`); on success it calls the caller-supplied `onSuccess(password)` and lets the caller
-decide what happens next.
+password fields; mismatched values error inline without a network call); or `rateLimited` instead of
+`code`, if `request-otp` itself comes back `RATE_LIMITED` (D-097) — no code was actually sent, so the
+component shows a dedicated `ErrorState` with retry rather than a code-entry screen that has nothing
+to verify. Final submit calls `POST /auth/link/confirm` with `{ email, newPassword }` (no `code` — it
+was already consumed by `verify-otp`); on success it calls the caller-supplied `onSuccess(password)`
+and lets the caller decide what happens next.
 
 ## Contracts
 - Props: `email: string` (the address to verify — caller resolves this, e.g. from the sign-in form
@@ -46,6 +48,11 @@ decide what happens next.
   server-side (Cognito `InvalidPasswordException` → `WEAK_PASSWORD`), the form shows a dedicated
   "doesn't meet the requirements above" message instead of the generic failure message — detected via
   `err instanceof ApiClientError && err.code === 'WEAK_PASSWORD'`.
+- A `RATE_LIMITED` error code (D-097, from either `request-otp` or `verify-otp`) is handled
+  distinctly per call site: on `request-otp` it moves to the `rateLimited` phase (dedicated
+  `ErrorState`, retry re-fires `request-otp`); on `verify-otp` it stays on the `code` phase but shows
+  a specific "too many attempts" message (`errors.auth.RATE_LIMITED`) instead of falling into the
+  generic invalid-code copy.
 
 ## Dependencies
 - **Upstream:** `apiClient` and its `ApiClientError` class (`src/lib/api-client.ts`), the
@@ -60,7 +67,9 @@ state, OTP-send failure still advancing to the code step, code verified via `lin
 before advancing to password, an invalid code staying on the code step with an inline error,
 password mismatch, successful submit calling `onSuccess`, `link/confirm` failure, and the optional
 back button), plus the live password checklist disabling/enabling submit as rules are satisfied and
-the specific `WEAK_PASSWORD` error message on a policy rejection, with `apiClient` mocked. Page-level
+the specific `WEAK_PASSWORD` error message on a policy rejection, and the `RATE_LIMITED` handling on
+both `request-otp` (dedicated error state, retry re-fires the send) and `verify-otp` (distinct inline
+message on the code step), with `apiClient` mocked. Page-level
 tests (`HomePage.test.tsx`, `SettingsPage.test.tsx`) exercise the same component through the real DOM
 but don't re-assert every phase — they check the handoff (correct `email` passed in, `onSuccess`
 wired to the right caller behavior).

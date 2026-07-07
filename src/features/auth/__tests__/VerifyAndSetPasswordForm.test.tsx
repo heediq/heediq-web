@@ -39,6 +39,39 @@ describe('VerifyAndSetPasswordForm', () => {
     )
   })
 
+  it('shows a rate-limited error state instead of the code step when request-otp is rate-limited (D-097)', async () => {
+    postMock.mockRejectedValueOnce(new ApiClientError('RATE_LIMITED', 'Too many attempts — try again shortly'))
+    render(<VerifyAndSetPasswordForm email="a@b.com" onSuccess={vi.fn()} />)
+
+    expect(await screen.findByText('Too many attempts')).toBeInTheDocument()
+    expect(
+      screen.getByText("We've paused new codes for this email for a bit. Please try again shortly."),
+    ).toBeInTheDocument()
+    expect(screen.queryByLabelText('Verification code')).not.toBeInTheDocument()
+  })
+
+  it('retries sending the code from the rate-limited error state', async () => {
+    postMock.mockRejectedValueOnce(new ApiClientError('RATE_LIMITED', 'Too many attempts — try again shortly'))
+    postMock.mockResolvedValueOnce({ sent: true })
+    render(<VerifyAndSetPasswordForm email="a@b.com" onSuccess={vi.fn()} />)
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Retry' }))
+
+    expect(await screen.findByLabelText('Verification code')).toBeInTheDocument()
+  })
+
+  it('shows a rate-limited error inline on the code step when verify-otp is rate-limited (D-097)', async () => {
+    postMock.mockResolvedValueOnce({ sent: true })
+    postMock.mockRejectedValueOnce(new ApiClientError('RATE_LIMITED', 'Too many attempts — try again shortly'))
+    render(<VerifyAndSetPasswordForm email="a@b.com" onSuccess={vi.fn()} />)
+
+    await userEvent.type(await screen.findByLabelText('Verification code'), '123456')
+    await userEvent.click(screen.getByRole('button', { name: 'Continue' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Too many attempts. Please try again shortly.')
+    expect(screen.getByLabelText('Verification code')).toBeInTheDocument()
+  })
+
   it('verifies the code against the backend before moving to the password step', async () => {
     postMock.mockResolvedValueOnce({ sent: true })
     postMock.mockResolvedValueOnce({ verified: true })
