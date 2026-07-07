@@ -95,11 +95,13 @@ installable, offline-capable (D-024).
   hardcoded literal in JSX/TS. Add new copy to `src/i18n/locales/en/translation.json`, not inline.
 
 ## Dependencies
-- **Upstream**: `heediq-api` (REST + WebSocket endpoints, incl. `GET /me` and the PreTokenGeneration
-  trigger, D-077), `@heediq/shared` (types), Cognito Hosted UI (auth, `heediq-infra`'s
-  `FoundationStack`), `heediq-infra` (S3 web-assets bucket + CloudFront distribution + SSM params
-  the deploy pipeline reads, incl. `/heediq/api/cognito-hosted-ui-domain` and
-  `/heediq/api/cognito-client-id`).
+- **Upstream**: `heediq-api` (REST endpoints, incl. `GET /me` and the PreTokenGeneration trigger,
+  D-077), `@heediq/shared` (types), Cognito Hosted UI (auth, `heediq-infra`'s `FoundationStack`),
+  `heediq-infra` (S3 web-assets bucket + CloudFront distribution + SSM params the deploy pipeline
+  reads, incl. `/heediq/api/cognito-hosted-ui-domain` and `/heediq/api/cognito-client-id`).
+  `heediq-infra`'s WebSocket API (`WebSocketStack`) exists and pushes job-status updates, but this
+  repo has no WebSocket client yet — that's part of the still-unbuilt `SourcesLibraryPage`/
+  `SourceDetailPage` work (D-069 build order), not a current dependency.
 - **Downstream**: none yet (this is the frontend leaf).
 - **Shared surfaces**: `@heediq/shared` version bumps; design tokens (`tokens.css`) if D-008 changes.
 
@@ -119,7 +121,7 @@ installable, offline-capable (D-024).
   `src/features/auth/README.md`.
 - `src/lib/__tests__/api-client.test.ts` (D-088) — asserts the `/api/v1` prefix is applied to every
   request; regression test for the production 404 that motivated D-088.
-- 24 test files / 106 tests total (`pnpm run test`).
+- 24 test files / 107 tests total (`pnpm run test`).
 - No integration/E2E suites yet — add Playwright E2E once at least one real data screen exists
   behind auth.
 

@@ -33,9 +33,10 @@ export function getAccessToken(): string | null {
   return session?.accessToken ?? null
 }
 
-// heediq-api's authMiddleware requires custom:orgId/custom:role/email — Cognito's
-// PreTokenGeneration trigger (V1) only injects those into the ID token, never the access
-// token, so this (not getAccessToken) is what api-client.ts must send as the Bearer token.
+// heediq-api's authMiddleware requires custom:orgId/custom:role/custom:accountId/email —
+// Cognito's PreTokenGeneration trigger (V1) only injects those into the ID token, never the
+// access token, so this (not getAccessToken) is what api-client.ts must send as the Bearer
+// token. custom:accountId (D-099) is the app-owned identity, decoupled from Cognito's sub.
 export function getIdToken(): string | null {
   return session?.idToken ?? null
 }
