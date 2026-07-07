@@ -32,6 +32,10 @@
       "codeLabel": "Verification code",
       "codeSubmit": "Continue",
       "invalidCode": "That code is incorrect or expired. Please check it and try again.",
+      "rateLimited": {
+        "title": "Too many attempts",
+        "description": "We've paused new codes for this email for a bit. Please try again shortly."
+      },
       "newPasswordLabel": "Create a password",
       "confirmPasswordLabel": "Confirm password",
       "passwordMismatch": "Passwords don't match.",
@@ -105,7 +109,8 @@
       "WEAK_PASSWORD": "That password doesn't meet the requirements above.",
       "InvalidParameterException": "Check your input and try again.",
       "LimitExceededException": "Too many attempts. Please try again later.",
-      "UserNotFoundException": "Incorrect email or password."
+      "UserNotFoundException": "Incorrect email or password.",
+      "RATE_LIMITED": "Too many attempts. Please try again shortly."
     }
   }
 }

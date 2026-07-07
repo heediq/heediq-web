@@ -2,14 +2,18 @@ import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { isPasswordPolicyCompliant } from '@heediq/shared'
-import { Button, Input, LoadingMark, PasswordRequirements } from '../../components/ui'
+import { Button, ErrorState, Input, LoadingMark, PasswordRequirements } from '../../components/ui'
 import { apiClient, ApiClientError } from '../../lib/api-client'
 
 // Shared across all three D-089 entry points (reactive login-time linking, native signup,
 // proactive settings linking) — same backend calls, same two-step UI (code, then password;
 // never combined into one form). Email verification is always ours, never inferred from an
 // IdP's asserted email_verified (D-089/D-090).
-type Phase = 'sendingCode' | 'code' | 'password'
+//
+// 'rateLimited' is its own phase, not folded into 'code': D-097's app-level limiter means no
+// code was actually sent, so advancing to the code-entry screen would ask the user for
+// something that doesn't exist yet.
+type Phase = 'sendingCode' | 'code' | 'password' | 'rateLimited'
 
 export interface VerifyAndSetPasswordFormProps {
   email: string
@@ -25,16 +29,23 @@ export function VerifyAndSetPasswordForm({ email, onSuccess, onBack }: VerifyAnd
   const [confirmPassword, setConfirmPassword] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [sendAttempt, setSendAttempt] = useState(0)
 
   useEffect(() => {
     let cancelled = false
     async function sendCode() {
+      setPhase('sendingCode')
       try {
         await apiClient.post('/auth/link/request-otp', { email })
-      } catch {
-        if (!cancelled) setError(t('auth.verify.sendCodeError'))
-      } finally {
         if (!cancelled) setPhase('code')
+      } catch (err: unknown) {
+        if (cancelled) return
+        if (err instanceof ApiClientError && err.code === 'RATE_LIMITED') {
+          setPhase('rateLimited')
+        } else {
+          setError(t('auth.verify.sendCodeError'))
+          setPhase('code')
+        }
       }
     }
     void sendCode()
@@ -42,7 +53,7 @@ export function VerifyAndSetPasswordForm({ email, onSuccess, onBack }: VerifyAnd
       cancelled = true
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [email])
+  }, [email, sendAttempt])
 
   // The code screen must not advance until the backend has actually verified it (D-089) —
   // /auth/link/verify-otp consumes the code via Cognito's ConfirmSignUp, independent of the
@@ -55,7 +66,9 @@ export function VerifyAndSetPasswordForm({ email, onSuccess, onBack }: VerifyAnd
       await apiClient.post('/auth/link/verify-otp', { email, code })
       setPhase('password')
     } catch (err: unknown) {
-      if (err instanceof ApiClientError) {
+      if (err instanceof ApiClientError && err.code === 'RATE_LIMITED') {
+        setError(t('errors.auth.RATE_LIMITED'))
+      } else if (err instanceof ApiClientError) {
         setError(t('auth.verify.invalidCode'))
       } else {
         setError(t('errors.auth.generic'))
@@ -99,6 +112,16 @@ export function VerifyAndSetPasswordForm({ email, onSuccess, onBack }: VerifyAnd
         <LoadingMark size="sm" aria-label={t('common.loading')} />
         <p className="text-caption text-text-secondary">{t('auth.verify.sendingCode', { email })}</p>
       </div>
+    )
+  }
+
+  if (phase === 'rateLimited') {
+    return (
+      <ErrorState
+        title={t('auth.verify.rateLimited.title')}
+        description={t('auth.verify.rateLimited.description')}
+        onRetry={() => setSendAttempt((n) => n + 1)}
+      />
     )
   }
 
