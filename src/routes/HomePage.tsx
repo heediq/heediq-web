@@ -148,7 +148,6 @@ export function HomePage() {
     <div className="flex min-h-screen flex-col items-center justify-center gap-6 p-4">
       <div className="flex flex-col items-center gap-2 text-center">
         <h1 className="text-display">{t('home.title')}</h1>
-        <p className="text-body text-text-secondary">{t('home.subtitle')}</p>
       </div>
 
       <div className="flex w-full max-w-sm flex-col gap-4">

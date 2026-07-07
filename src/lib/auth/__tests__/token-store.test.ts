@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import {
   clearSession,
   getAccessToken,
+  getIdToken,
   getRefreshToken,
   isSessionActive,
   setRefreshToken,
@@ -13,15 +14,17 @@ describe('token-store', () => {
     clearSession()
   })
 
-  it('has no active session and no access token initially', () => {
+  it('has no active session and no access/id token initially', () => {
     expect(isSessionActive()).toBe(false)
     expect(getAccessToken()).toBeNull()
+    expect(getIdToken()).toBeNull()
   })
 
-  it('activates a session once tokens are set', () => {
+  it('activates a session once tokens are set, keeping access and id tokens distinct', () => {
     setSession({ access_token: 'at', id_token: 'it', expires_in: 3600 })
     expect(isSessionActive()).toBe(true)
     expect(getAccessToken()).toBe('at')
+    expect(getIdToken()).toBe('it')
   })
 
   it('treats an expired session as inactive', () => {
@@ -42,6 +45,7 @@ describe('token-store', () => {
 
     expect(isSessionActive()).toBe(false)
     expect(getAccessToken()).toBeNull()
+    expect(getIdToken()).toBeNull()
     expect(getRefreshToken()).toBeNull()
   })
 })

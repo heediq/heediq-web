@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import type { ReactNode } from 'react'
 import { setAccessTokenGetter } from '../api-client'
 import { logoutUrl, refreshTokens, startLogin, type TokenResponse } from './cognito-oauth'
-import { clearSession, getAccessToken, getRefreshToken, setRefreshToken, setSession } from './token-store'
+import { clearSession, getIdToken, getRefreshToken, setRefreshToken, setSession } from './token-store'
 
 type AuthStatus = 'loading' | 'authenticated' | 'anonymous'
 
@@ -19,7 +19,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>('loading')
 
   useEffect(() => {
-    setAccessTokenGetter(getAccessToken)
+    setAccessTokenGetter(getIdToken)
   }, [])
 
   useEffect(() => {
