@@ -33,6 +33,13 @@ export function getAccessToken(): string | null {
   return session?.accessToken ?? null
 }
 
+// heediq-api's authMiddleware requires custom:orgId/custom:role/email — Cognito's
+// PreTokenGeneration trigger (V1) only injects those into the ID token, never the access
+// token, so this (not getAccessToken) is what api-client.ts must send as the Bearer token.
+export function getIdToken(): string | null {
+  return session?.idToken ?? null
+}
+
 export function isSessionActive(): boolean {
   return session !== null && session.expiresAt > Date.now()
 }

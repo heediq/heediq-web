@@ -10,6 +10,11 @@ vi.mock('../cognito-oauth', () => ({
   logoutUrl: () => 'https://cognito.example/logout',
 }))
 
+const setAccessTokenGetter = vi.fn()
+vi.mock('../../api-client', () => ({
+  setAccessTokenGetter: (fn: () => string | null) => setAccessTokenGetter(fn),
+}))
+
 function Probe() {
   const { status } = useAuth()
   return <p>status:{status}</p>
@@ -18,6 +23,7 @@ function Probe() {
 describe('AuthProvider', () => {
   beforeEach(() => {
     refreshTokens.mockReset()
+    setAccessTokenGetter.mockReset()
     clearSession()
   })
 
@@ -58,5 +64,26 @@ describe('AuthProvider', () => {
 
     await waitFor(() => expect(screen.getByText('status:anonymous')).toBeInTheDocument())
     expect(getRefreshToken()).toBeNull()
+  })
+
+  // Regression: heediq-api's authMiddleware requires custom:orgId/custom:role/email, which
+  // Cognito's PreTokenGeneration trigger only injects into the ID token, never the access
+  // token — wiring the wrong one causes every authenticated call to 401 with "Token missing
+  // required claims".
+  it('wires api-client to read the ID token, not the access token', async () => {
+    setRefreshToken('stored-refresh-token')
+    refreshTokens.mockResolvedValue({ access_token: 'at', id_token: 'it', expires_in: 3600 })
+
+    render(
+      <AuthProvider>
+        <Probe />
+      </AuthProvider>,
+    )
+
+    await waitFor(() => expect(screen.getByText('status:authenticated')).toBeInTheDocument())
+
+    expect(setAccessTokenGetter).toHaveBeenCalledTimes(1)
+    const registeredGetter = setAccessTokenGetter.mock.calls[0]?.[0] as () => string | null
+    expect(registeredGetter()).toBe('it')
   })
 })
