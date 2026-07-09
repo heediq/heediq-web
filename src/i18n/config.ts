@@ -8,6 +8,9 @@ void i18n.use(initReactI18next).init({
   fallbackLng: 'en',
   interpolation: { escapeValue: false },
   initAsync: false,
+  // Single bundled namespace only (D-076) — permission keys like "sources:read" contain
+  // a literal ':', which i18next's default nsSeparator would otherwise split on.
+  nsSeparator: false,
 })
 
 export { i18n }

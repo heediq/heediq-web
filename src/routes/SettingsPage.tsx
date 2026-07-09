@@ -1,17 +1,15 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import type { ListAuthMethodsResponse, Org, User } from '@heediq/shared'
+import type { ListAuthMethodsResponse } from '@heediq/shared'
 import { Badge, Button, Card, ErrorState, LoadingMark } from '../components/ui'
 import { VerifyAndSetPasswordForm } from '../features/auth/VerifyAndSetPasswordForm'
 import { startProviderLink } from '../lib/auth/cognito-oauth'
 import type { LinkableProvider } from '../lib/auth/cognito-oauth'
 import { apiClient } from '../lib/api-client'
-
-interface GetMeResponse {
-  user: User
-  org: Org
-}
+import type { GetMeResponse } from '../lib/rbac/types'
+import { Can } from '../lib/rbac/Can'
 
 export function SettingsPage() {
   const { t } = useTranslation()
@@ -110,6 +108,19 @@ export function SettingsPage() {
             )}
           </Card.Content>
         </Card>
+
+        <Can permission="org:manage-roles">
+          <Card>
+            <Card.Header>
+              <Card.Title>{t('nav.roles')}</Card.Title>
+            </Card.Header>
+            <Card.Content>
+              <Button asChild variant="secondary">
+                <Link to="/settings/roles">{t('nav.roles')}</Link>
+              </Button>
+            </Card.Content>
+          </Card>
+        </Can>
       </div>
     </div>
   )

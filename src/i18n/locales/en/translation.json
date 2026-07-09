@@ -2,7 +2,16 @@
   "common": {
     "loading": "Loading",
     "retry": "Retry",
-    "checkingSession": "Checking your session"
+    "checkingSession": "Checking your session",
+    "dismiss": "Dismiss",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saving": "Saving…",
+    "create": "Create",
+    "creating": "Creating…",
+    "delete": "Delete",
+    "deleting": "Deleting…",
+    "edit": "Edit"
   },
   "home": {
     "title": "heediq",
@@ -55,6 +64,7 @@
   },
   "nav": {
     "settings": "Settings",
+    "roles": "Roles & Permissions",
     "logout": "Log out"
   },
   "sourcesLibrary": {
@@ -86,6 +96,81 @@
         "Google": "Google",
         "Microsoft": "Microsoft"
       }
+    }
+  },
+  "rolesSettings": {
+    "title": "Roles & Permissions",
+    "tabs": {
+      "roles": "Roles",
+      "groups": "Groups",
+      "users": "Users"
+    },
+    "roles": {
+      "loadError": "Could not load roles.",
+      "empty": "No roles yet",
+      "columnName": "Name",
+      "columnPermissions": "Permissions",
+      "createButton": "Create role",
+      "createTitle": "Create role",
+      "editTitle": "Edit role",
+      "deleteConfirm": "Delete role \"{{name}}\"?",
+      "systemRoleUndeletable": "System roles can't be deleted",
+      "createSuccess": "Role created",
+      "updateSuccess": "Role updated",
+      "deleteSuccess": "Role deleted",
+      "saveError": "Could not save the role. Please try again.",
+      "deleteError": "Could not delete the role. Please try again.",
+      "systemRoleDeleteError": "System roles (admin/member) can't be deleted."
+    },
+    "groups": {
+      "loadError": "Could not load groups.",
+      "empty": "No groups yet",
+      "columnName": "Name",
+      "columnRoles": "Roles",
+      "createButton": "Create group",
+      "createTitle": "Create group",
+      "editTitle": "Edit group",
+      "deleteConfirm": "Delete group \"{{name}}\"?",
+      "createSuccess": "Group created",
+      "updateSuccess": "Group updated",
+      "deleteSuccess": "Group deleted",
+      "saveError": "Could not save the group. Please try again.",
+      "deleteError": "Could not delete the group. Please try again."
+    },
+    "users": {
+      "loadError": "Could not load users.",
+      "empty": "No users yet",
+      "columnEmail": "Email",
+      "columnRole": "Role",
+      "manageButton": "Manage assignments",
+      "modalTitle": "Assignments for {{email}}",
+      "loadAssignmentsError": "Could not load assignments.",
+      "noAssignments": "No roles or groups assigned yet",
+      "assignLabel": "Assign a role or group",
+      "assignPlaceholder": "Select a role or group",
+      "assignButton": "Assign",
+      "assignSuccess": "Assignment added",
+      "assignError": "Could not add the assignment. Please try again.",
+      "removeSuccess": "Assignment removed",
+      "removeError": "Could not remove the assignment. Please try again.",
+      "roleOption": "Role: {{name}}",
+      "groupOption": "Group: {{name}}"
+    },
+    "form": {
+      "nameLabel": "Name",
+      "nameRequired": "Name is required",
+      "permissionsLabel": "Permissions",
+      "rolesLabel": "Roles"
+    },
+    "permissions": {
+      "sources:read": "Read all sources",
+      "sources:read-own": "Read own sources",
+      "sources:create": "Create sources",
+      "sources:update": "Update sources",
+      "sources:delete": "Delete sources",
+      "sources:enqueue-job": "Enqueue transcription jobs",
+      "org:manage-roles": "Manage roles & permissions",
+      "audit:read": "Read audit log"
     }
   },
   "settingsLinkCallback": {
