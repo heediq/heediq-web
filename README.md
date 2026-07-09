@@ -7,8 +7,10 @@ assembled from shared, tokenized components rather than bespoke styling per scre
 installable, offline-capable (D-024).
 
 ## Key Files
-- `src/App.tsx` — route table (`/`, `/auth/callback`, `/sources`, `/sources/:sourceId`, and
-  `/dev/ui` gated behind `import.meta.env.DEV`) wrapped in `QueryClientProvider` + `BrowserRouter`.
+- `src/App.tsx` — route table (`/`, `/auth/callback`, `/sources`, `/sources/:sourceId`, `/settings`,
+  `/settings/roles` (gated by `<Can permission="org:manage-roles">`, D-102 Phase 4),
+  `/settings/link-callback`, and `/dev/ui` gated behind `import.meta.env.DEV`) wrapped in
+  `QueryClientProvider` + `BrowserRouter`.
 - `src/main.tsx` — React root, imports `src/i18n/config` and `src/styles/globals.css`.
 - `src/i18n/config.ts` — initializes `react-i18next`/`i18next` synchronously with bundled resources
   (`initAsync: false`) so `t()` works both inside components (`useTranslation`) and in plain modules
@@ -45,8 +47,20 @@ installable, offline-capable (D-024).
   set-password component (D-089), reused by `HomePage` (reactive linking + native signup) and
   `SettingsPage` (proactive "add a sign-in method"). See `src/features/auth/README.md`.
 - `src/components/ui/` — the UI kit: `Button`, `Spinner`, `Card`, `Badge` (D-072), `LoadingMark`
-  (D-074), `ErrorState`, `Input`. Each has its own `README.md` (props/variants/states/usage) per
-  `03-ui-kit.md` §9.
+  (D-074), `ErrorState`, `Input`, `Table`, `Modal`, `Checkbox`, `Select`, `Toast` (D-102 Phase 4 —
+  `Table`/`Modal`/`Checkbox`/`Select` are Radix-based primitives added for the Roles/Groups/Users
+  screens; `Toast` is the centralized success/error outcome-feedback primitive, `04-loading-and-feedback.md`
+  §7). Each has its own `README.md` (props/variants/states/usage) per `03-ui-kit.md` §9.
+- `src/lib/rbac/` — `usePermissions` (TanStack Query hook over `GET /me`'s `effectivePermissions`)
+  and `<Can permission="...">` (UX-only conditional render; the real authorization boundary is
+  always server-side, D-102/D-105). See `src/lib/rbac/README.md`.
+- `src/features/rbac/` — `RoleForm`/`GroupForm` (create/edit forms used inside `Modal`),
+  `RolesPanel`/`GroupsPanel`/`UsersPanel` (the three `RolesSettingsPage` tabs — CRUD tables +
+  mutations with success/error toasts, no optimistic UI since role/permission changes are
+  security-relevant), `AssignmentsModal` (per-user role/group assignment list + assign/remove,
+  fetched lazily via `enabled: open && !!user` to avoid an N+1 upfront fetch across all users).
+- `src/routes/RolesSettingsPage.tsx` — thin tabbed shell (Roles / Groups / Users) composing the
+  `src/features/rbac/` panels; route is `/settings/roles`.
 - `public/brand/` — final logo assets (`heediq-logo.png`, `heediq-badge-bg.svg`,
   `heediq-stubs.svg`), copied verbatim from `design_handoff_heediq_brand/assets/` per D-073.
 - `src/routes/` — screen-level route components. `HomePage` (unified email-first sign-in/sign-up +
@@ -95,8 +109,10 @@ installable, offline-capable (D-024).
   hardcoded literal in JSX/TS. Add new copy to `src/i18n/locales/en/translation.json`, not inline.
 
 ## Dependencies
-- **Upstream**: `heediq-api` (REST endpoints, incl. `GET /me` and the PreTokenGeneration trigger,
-  D-077), `@heediq/shared` (types), Cognito Hosted UI (auth, `heediq-infra`'s `FoundationStack`),
+- **Upstream**: `heediq-api` (REST endpoints, incl. `GET /me`'s `effectivePermissions` and
+  `GET /api/v1/users`, D-102 Phase 4, plus the PreTokenGeneration trigger, D-077),
+  `@heediq/shared` `^0.10.0` (types, incl. `Role`/`Group`/`RoleAssignment`/`Permission`/`PERMISSIONS`,
+  D-102), Cognito Hosted UI (auth, `heediq-infra`'s `FoundationStack`),
   `heediq-infra` (S3 web-assets bucket + CloudFront distribution + SSM params the deploy pipeline
   reads, incl. `/heediq/api/cognito-hosted-ui-domain` and `/heediq/api/cognito-client-id`).
   `heediq-infra`'s WebSocket API (`WebSocketStack`) exists and pushes job-status updates, but this
@@ -110,7 +126,12 @@ installable, offline-capable (D-024).
 - `pnpm run test:pre-pr` = typecheck + test — the pre-PR gate (`05-testing.md`).
 - Component tests cover all declared states (default/hover/focus/disabled/loading/error) per kit
   component: `Button.test.tsx`, `Spinner.test.tsx`, `Card.test.tsx`, `Badge.test.tsx`,
-  `LoadingMark.test.tsx`, `ErrorState.test.tsx`, `Input.test.tsx`.
+  `LoadingMark.test.tsx`, `ErrorState.test.tsx`, `Input.test.tsx`, `Table.test.tsx`, `Modal.test.tsx`
+  (via composition in component tests), `Checkbox.test.tsx`, `Select.test.tsx`, `Toast.test.tsx`.
+- RBAC tests (D-102 Phase 4): `lib/rbac/__tests__/usePermissions.test.tsx`, `Can.test.tsx`;
+  `features/rbac/__tests__/RoleForm.test.tsx`, `GroupForm.test.tsx`, `RolesPanel.test.tsx`,
+  `GroupsPanel.test.tsx`, `UsersPanel.test.tsx`, `AssignmentsModal.test.tsx`;
+  `routes/__tests__/RolesSettingsPage.test.tsx` (tab switching).
 - Auth flow unit tests (see `src/lib/auth/README.md` for the full breakdown): `pkce.test.ts`,
   `cognito-oauth.test.ts`, `cognito-idp.test.ts`, `jwt.test.ts`, `token-store.test.ts`,
   `AuthContext.test.tsx`, `ProtectedRoute.test.tsx`, and `routes/__tests__/HomePage.test.tsx`/
@@ -121,7 +142,7 @@ installable, offline-capable (D-024).
   `src/features/auth/README.md`.
 - `src/lib/__tests__/api-client.test.ts` (D-088) — asserts the `/api/v1` prefix is applied to every
   request; regression test for the production 404 that motivated D-088.
-- 24 test files / 107 tests total (`pnpm run test`).
+- 38 test files / 158 tests total (`pnpm run test`).
 - No integration/E2E suites yet — add Playwright E2E once at least one real data screen exists
   behind auth.
 
