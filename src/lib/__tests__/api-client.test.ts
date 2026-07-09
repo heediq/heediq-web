@@ -52,4 +52,22 @@ describe('apiClient (D-088 — version prefix regression)', () => {
     expect(err).not.toBeInstanceOf(ApiClientError)
     expect(err).toBeInstanceOf(Error)
   })
+
+  it('sends a PATCH request with a JSON body', async () => {
+    await apiClient.patch('/roles/role-1', { name: 'New name' })
+
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toMatch(/\/api\/v1\/roles\/role-1$/)
+    expect(init.method).toBe('PATCH')
+    expect(init.body).toBe(JSON.stringify({ name: 'New name' }))
+  })
+
+  it('sends a DELETE request with no body', async () => {
+    await apiClient.delete('/roles/role-1')
+
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toMatch(/\/api\/v1\/roles\/role-1$/)
+    expect(init.method).toBe('DELETE')
+    expect(init.body).toBeUndefined()
+  })
 })
