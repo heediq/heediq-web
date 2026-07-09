@@ -131,7 +131,10 @@ installable, offline-capable (D-024).
 - RBAC tests (D-102 Phase 4): `lib/rbac/__tests__/usePermissions.test.tsx`, `Can.test.tsx`;
   `features/rbac/__tests__/RoleForm.test.tsx`, `GroupForm.test.tsx`, `RolesPanel.test.tsx`,
   `GroupsPanel.test.tsx`, `UsersPanel.test.tsx`, `AssignmentsModal.test.tsx`;
-  `routes/__tests__/RolesSettingsPage.test.tsx` (tab switching).
+  `routes/__tests__/RolesSettingsPage.test.tsx` (tab switching);
+  `i18n/__tests__/permission-coverage.test.ts` — asserts every `PERMISSIONS` entry (`@heediq/shared`)
+  has a matching `rolesSettings.permissions` i18n key, catching silent drift between the permission
+  constant and its label.
 - Auth flow unit tests (see `src/lib/auth/README.md` for the full breakdown): `pkce.test.ts`,
   `cognito-oauth.test.ts`, `cognito-idp.test.ts`, `jwt.test.ts`, `token-store.test.ts`,
   `AuthContext.test.tsx`, `ProtectedRoute.test.tsx`, and `routes/__tests__/HomePage.test.tsx`/
@@ -142,7 +145,7 @@ installable, offline-capable (D-024).
   `src/features/auth/README.md`.
 - `src/lib/__tests__/api-client.test.ts` (D-088) — asserts the `/api/v1` prefix is applied to every
   request; regression test for the production 404 that motivated D-088.
-- 38 test files / 158 tests total (`pnpm run test`).
+- 39 test files / 159 tests total (`pnpm run test`).
 - No integration/E2E suites yet — add Playwright E2E once at least one real data screen exists
   behind auth.
 
