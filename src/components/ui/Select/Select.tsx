@@ -32,7 +32,7 @@ export function Select({
   return (
     <div className="flex flex-col gap-1.5">
       <span className="text-caption font-medium text-text-secondary">{label}</span>
-      <RadixSelect.Root value={value} onValueChange={onValueChange} disabled={disabled}>
+      <RadixSelect.Root value={value ?? ''} onValueChange={onValueChange} disabled={disabled}>
         <RadixSelect.Trigger
           id={id}
           aria-invalid={error ? true : undefined}
