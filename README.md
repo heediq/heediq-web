@@ -9,6 +9,7 @@ installable, offline-capable (D-024).
 ## Key Files
 - `src/App.tsx` — route table (`/`, `/auth/callback`, `/sources`, `/sources/:sourceId`, `/settings`,
   `/settings/roles` (gated by `<Can permission="org:manage-roles">`, D-102 Phase 4),
+  `/org/audit-log` (gated by `<Can permission="audit:read">`, D-102 Phase 5),
   `/settings/link-callback`, and `/dev/ui` gated behind `import.meta.env.DEV`) wrapped in
   `QueryClientProvider` + `BrowserRouter`.
 - `src/main.tsx` — React root, imports `src/i18n/config` and `src/styles/globals.css`.
@@ -61,6 +62,11 @@ installable, offline-capable (D-024).
   fetched lazily via `enabled: open && !!user` to avoid an N+1 upfront fetch across all users).
 - `src/routes/RolesSettingsPage.tsx` — thin tabbed shell (Roles / Groups / Users) composing the
   `src/features/rbac/` panels; route is `/settings/roles`.
+- `src/routes/AuditLogPage.tsx` — D-102 Phase 5 audit-log viewer: filterable (actor/action/resource
+  type/date range), cursor-paginated table over `GET /org/audit-log`; accumulates pages into local
+  state via a `useEffect` on `query.data` rather than `useQuery`'s `onSuccess` (removed in TanStack
+  Query v5). Route is `/org/audit-log`, gated by `<Can permission="audit:read">`; entry point is a
+  card on `SettingsPage` shown only when the permission is present.
 - `public/brand/` — final logo assets (`heediq-logo.png`, `heediq-badge-bg.svg`,
   `heediq-stubs.svg`), copied verbatim from `design_handoff_heediq_brand/assets/` per D-073.
 - `src/routes/` — screen-level route components. `HomePage` (unified email-first sign-in/sign-up +
