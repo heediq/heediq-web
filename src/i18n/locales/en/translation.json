@@ -65,6 +65,7 @@
   "nav": {
     "settings": "Settings",
     "roles": "Roles & Permissions",
+    "auditLog": "Audit Log",
     "logout": "Log out"
   },
   "sourcesLibrary": {
@@ -172,6 +173,34 @@
       "org:manage-roles": "Manage roles & permissions",
       "audit:read": "Read audit log"
     }
+  },
+  "auditLog": {
+    "title": "Audit Log",
+    "filters": {
+      "actorUserIdLabel": "Actor user ID",
+      "actorUserIdPlaceholder": "Filter by user ID",
+      "actionLabel": "Action",
+      "actionPlaceholder": "Filter by action",
+      "resourceTypeLabel": "Resource type",
+      "resourceTypePlaceholder": "All resource types",
+      "fromLabel": "From",
+      "toLabel": "To",
+      "resourceType": {
+        "role": "Role",
+        "group": "Group",
+        "roleAssignment": "Role assignment",
+        "groupAssignment": "Group assignment",
+        "source": "Source",
+        "auth": "Auth"
+      }
+    },
+    "columnTimestamp": "Time",
+    "columnActor": "Actor",
+    "columnAction": "Action",
+    "columnResourceType": "Resource",
+    "loadError": "Could not load the audit log.",
+    "empty": "No audit log entries yet",
+    "loadMore": "Load more"
   },
   "settingsLinkCallback": {
     "linking": "Linking your account",

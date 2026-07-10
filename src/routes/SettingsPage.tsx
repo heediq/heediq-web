@@ -121,6 +121,19 @@ export function SettingsPage() {
             </Card.Content>
           </Card>
         </Can>
+
+        <Can permission="audit:read">
+          <Card>
+            <Card.Header>
+              <Card.Title>{t('nav.auditLog')}</Card.Title>
+            </Card.Header>
+            <Card.Content>
+              <Button asChild variant="secondary">
+                <Link to="/org/audit-log">{t('nav.auditLog')}</Link>
+              </Button>
+            </Card.Content>
+          </Card>
+        </Can>
       </div>
     </div>
   )

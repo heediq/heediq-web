@@ -13,6 +13,7 @@ import { SourceDetailPage } from './routes/SourceDetailPage'
 import { SettingsPage } from './routes/SettingsPage'
 import { SettingsLinkCallbackPage } from './routes/SettingsLinkCallbackPage'
 import { RolesSettingsPage } from './routes/RolesSettingsPage'
+import { AuditLogPage } from './routes/AuditLogPage'
 import { DevUiGalleryPage } from './routes/DevUiGalleryPage'
 
 export function App() {
@@ -61,6 +62,18 @@ export function App() {
                     <AppShell>
                       <Can permission="org:manage-roles" fallback={<Navigate to="/settings" replace />}>
                         <RolesSettingsPage />
+                      </Can>
+                    </AppShell>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/org/audit-log"
+                element={
+                  <ProtectedRoute>
+                    <AppShell>
+                      <Can permission="audit:read" fallback={<Navigate to="/settings" replace />}>
+                        <AuditLogPage />
                       </Can>
                     </AppShell>
                   </ProtectedRoute>
