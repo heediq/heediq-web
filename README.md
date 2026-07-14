@@ -151,7 +151,7 @@ installable, offline-capable (D-024).
   `src/features/auth/README.md`.
 - `src/lib/__tests__/api-client.test.ts` (D-088) — asserts the `/api/v1` prefix is applied to every
   request; regression test for the production 404 that motivated D-088.
-- 39 test files / 159 tests total (`pnpm run test`).
+- 40 test files / 164 tests total (`pnpm run test`).
 - No integration/E2E suites yet — add Playwright E2E once at least one real data screen exists
   behind auth.
 
