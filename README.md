@@ -102,6 +102,7 @@ installable, offline-capable (D-024).
   D-082; not derivable from `VITE_COGNITO_DOMAIN`, which may be a custom domain in prod; set in CI
   from `vars.AWS_REGION`, not SSM, since it's the same region the deploy role/CDK stack use). See
   `.env.example` for local values; CI resolves per-environment values from SSM (see Deploy).
+  `VITE_WS_BASE_URL` is consumed by `src/lib/ws/WsProvider.tsx` (D-110; see `src/lib/ws/README.md`).
 - **Shared types**: `@heediq/shared` is the single source of truth for API/DB shapes shared with the
   backend (`07-engineering-standards.md` §1). Don't redefine a backend contract type locally.
 - **Auth callback contract**: redirect URI is always `<origin>/auth/callback`; the Hosted UI client
@@ -117,13 +118,14 @@ installable, offline-capable (D-024).
 ## Dependencies
 - **Upstream**: `heediq-api` (REST endpoints, incl. `GET /me`'s `effectivePermissions` and
   `GET /api/v1/users`, D-102 Phase 4, plus the PreTokenGeneration trigger, D-077),
-  `@heediq/shared` `^0.10.0` (types, incl. `Role`/`Group`/`RoleAssignment`/`Permission`/`PERMISSIONS`,
+  `@heediq/shared` (types, incl. `Role`/`Group`/`RoleAssignment`/`Permission`/`PERMISSIONS`,
   D-102), Cognito Hosted UI (auth, `heediq-infra`'s `FoundationStack`),
   `heediq-infra` (S3 web-assets bucket + CloudFront distribution + SSM params the deploy pipeline
   reads, incl. `/heediq/api/cognito-hosted-ui-domain` and `/heediq/api/cognito-client-id`).
-  `heediq-infra`'s WebSocket API (`WebSocketStack`) exists and pushes job-status updates, but this
-  repo has no WebSocket client yet — that's part of the still-unbuilt `SourcesLibraryPage`/
-  `SourceDetailPage` work (D-069 build order), not a current dependency.
+  `heediq-infra`'s WebSocket API (`WebSocketStack`) — connected to via `src/lib/ws/WsProvider.tsx`
+  (D-110; see `src/lib/ws/README.md`). No feature consumes a pushed event yet (`SourcesLibraryPage`/
+  `SourceDetailPage` are still stubs, D-069 build order) but the client transport is live.
+  `@heediq/shared` `^0.12.0` (bumped for `ws.ts` envelope/registry types).
 - **Downstream**: none yet (this is the frontend leaf).
 - **Shared surfaces**: `@heediq/shared` version bumps; design tokens (`tokens.css`) if D-008 changes.
 
@@ -151,7 +153,9 @@ installable, offline-capable (D-024).
   `src/features/auth/README.md`.
 - `src/lib/__tests__/api-client.test.ts` (D-088) — asserts the `/api/v1` prefix is applied to every
   request; regression test for the production 404 that motivated D-088.
-- 40 test files / 164 tests total (`pnpm run test`).
+- `src/lib/ws/__tests__/WsProvider.test.tsx` (D-110) — see `src/lib/ws/README.md` for the breakdown
+  (connect/reconnect/backoff/dispatch, against a hand-rolled `FakeWebSocket`).
+- 41 test files / 171 tests total (`pnpm run test`).
 - No integration/E2E suites yet — add Playwright E2E once at least one real data screen exists
   behind auth.
 
