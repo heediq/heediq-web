@@ -45,6 +45,28 @@ describe('SettingsLinkCallbackPage', () => {
     postMock.mockReset()
     clearSession()
     setRefreshToken('current-session-refresh-token')
+    sessionStorage.clear()
+    window.history.pushState({}, '', '/')
+  })
+
+  it('skips replaying an already-consumed code and returns to settings without re-exchanging (D-113)', async () => {
+    window.history.pushState({}, '', '/settings/link-callback?code=already-used&state=xyz')
+    sessionStorage.setItem('heediq.oauth.consumed.already-used', '1')
+
+    render(
+      <MemoryRouter initialEntries={['/settings/link-callback?code=already-used&state=xyz']}>
+        <AuthProvider>
+          <Routes>
+            <Route path="/settings" element={<p>settings screen</p>} />
+            <Route path="/settings/link-callback" element={<SettingsLinkCallbackPage />} />
+          </Routes>
+        </AuthProvider>
+      </MemoryRouter>,
+    )
+
+    await waitFor(() => expect(screen.getByText('settings screen')).toBeInTheDocument())
+    expect(exchangeLinkCodeForTokens).not.toHaveBeenCalled()
+    expect(postMock).not.toHaveBeenCalled()
   })
 
   it('shows a linking indicator while the exchange is pending', () => {

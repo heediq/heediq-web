@@ -32,6 +32,18 @@ describe('AuthCallbackPage', () => {
   beforeEach(() => {
     exchangeCodeForTokens.mockReset()
     clearSession()
+    sessionStorage.clear()
+    window.history.pushState({}, '', '/')
+  })
+
+  it('skips replaying an already-consumed code and continues into the app (D-113)', async () => {
+    window.history.pushState({}, '', '/auth/callback?code=already-used&state=xyz')
+    sessionStorage.setItem('heediq.oauth.consumed.already-used', '1')
+
+    renderCallback('/auth/callback?code=already-used&state=xyz')
+
+    await waitFor(() => expect(screen.getByText('sources library')).toBeInTheDocument())
+    expect(exchangeCodeForTokens).not.toHaveBeenCalled()
   })
 
   it('shows a signing-in indicator while the exchange is pending', () => {
