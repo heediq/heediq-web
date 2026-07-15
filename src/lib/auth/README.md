@@ -64,9 +64,10 @@ Cognito's `identity_provider` query param, redirecting to `/settings/link-callba
 never passed to `applyTokens`**, since it represents the just-authenticated federated identity, not
 the current user's session. It decodes the returned ID token's `identities` claim (a JSON string
 Cognito attaches to federated sign-ins) to get `{ userId, providerName }`, then calls the backend
-`POST /settings/link/add-provider` (not yet built — `@aws-sdk/client-cognito-identity-provider` is
-now installed in `heediq-api` per D-084, see `heediq-api` README) so the server can call
-`AdminLinkProviderForUser` with IAM credentials the browser never holds.
+`POST /settings/link/add-provider` (`heediq-api/src/routes/settings.ts` — self-service, not gated by
+`requirePermission` since it only ever acts on the caller's own account per D-107, writes an
+`auth:link-provider` audit event) so the server can call `AdminLinkProviderForUser` with IAM
+credentials the browser never holds.
 
 ## Contracts
 - Cognito IdP JSON API: see `cognito-idp.ts` — request/response shapes documented inline per
