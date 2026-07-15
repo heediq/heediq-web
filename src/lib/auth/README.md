@@ -33,6 +33,12 @@ is always proven by Heediq's own emailed code (D-089/D-090), never inferred from
 - `AuthContext.tsx` — `useAuth()` hook exposing `status`/`login`/`logout`/`applyTokens`; the one
   place that writes to `token-store`.
 - `ProtectedRoute.tsx` — redirects to `/` when `status !== 'authenticated'`.
+- `useOAuthCallbackGuard.ts` (D-113) — marks an OAuth authorization `code` as consumed in
+  `sessionStorage` synchronously on first render; both OAuth callback pages consult it before
+  running their one-time exchange, so a duplicate invocation of the same callback URL (reload,
+  browser back/forward, duplicate navigation) short-circuits to the success path instead of
+  replaying an already-consumed code (which always fails, since the code is single-use, even
+  though the original attempt already succeeded server-side).
 
 ## Data Flow / How It Works
 **Normal login (D-089):** `HomePage` calls `apiClient.post('/auth/lookup-email')` to branch into

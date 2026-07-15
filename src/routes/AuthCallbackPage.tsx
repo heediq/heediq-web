@@ -4,15 +4,25 @@ import { useNavigate } from 'react-router-dom'
 import { ErrorState, LoadingMark } from '../components/ui'
 import { exchangeCodeForTokens } from '../lib/auth/cognito-oauth'
 import { useAuth } from '../lib/auth/AuthContext'
+import { useOAuthCallbackGuard } from '../lib/auth/useOAuthCallbackGuard'
 
 export function AuthCallbackPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { applyTokens } = useAuth()
   const [failed, setFailed] = useState(false)
+  const { isDuplicate } = useOAuthCallbackGuard()
 
   useEffect(() => {
     let cancelled = false
+
+    if (isDuplicate) {
+      // Already signed in by an earlier invocation of this exact callback (reload, browser
+      // back/forward) — the code is single-use, so replaying it would only fail (D-113). The
+      // session from the original successful exchange is already applied; just continue in.
+      navigate('/sources', { replace: true })
+      return
+    }
 
     exchangeCodeForTokens(new URLSearchParams(window.location.search))
       .then((tokens) => {
@@ -28,7 +38,7 @@ export function AuthCallbackPage() {
       cancelled = true
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [isDuplicate])
 
   if (failed) {
     return (
