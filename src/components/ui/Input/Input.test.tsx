@@ -40,4 +40,13 @@ describe('Input', () => {
     render(<Input label="Email" disabled />)
     expect(screen.getByLabelText('Email')).toBeDisabled()
   })
+
+  it('animates its focus ring and border via token-driven transition classes', () => {
+    render(<Input label="Email" />)
+    const input = screen.getByLabelText('Email')
+    // Regression: box-shadow (the focus ring) must be in the transitioned property
+    // list alongside border-color, or it snaps instantly instead of animating in/out.
+    expect(input.className).toMatch(/transition-\[border-color,box-shadow/)
+    expect(input.className).toContain('duration-base')
+  })
 })
