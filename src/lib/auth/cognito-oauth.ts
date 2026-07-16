@@ -16,7 +16,14 @@ function linkRedirectUri(): string {
   return `${window.location.origin}/settings/link-callback`
 }
 
-export async function startLogin(): Promise<void> {
+export type LinkableProvider = 'Google' | 'Microsoft'
+
+/**
+ * `provider` sends `identity_provider` straight through to Cognito's Hosted-UI authorize
+ * endpoint (D-118), skipping its generic IdP picker — mirrors `startProviderLink` below.
+ * Omitted, the user lands on Cognito's own picker (email/password + IdP choices).
+ */
+export async function startLogin(provider?: LinkableProvider): Promise<void> {
   const verifier = generateCodeVerifier()
   const state = generateState()
   const challenge = await generateCodeChallenge(verifier)
@@ -32,12 +39,11 @@ export async function startLogin(): Promise<void> {
     code_challenge: challenge,
     code_challenge_method: 'S256',
     state,
+    ...(provider ? { identity_provider: provider } : {}),
   })
 
   window.location.assign(`${COGNITO_DOMAIN}/oauth2/authorize?${params.toString()}`)
 }
-
-export type LinkableProvider = 'Google' | 'Microsoft'
 
 /**
  * Proactive linking (D-079/D-083): a provider the current user has never signed into has no

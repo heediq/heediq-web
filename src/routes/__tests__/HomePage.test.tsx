@@ -50,7 +50,7 @@ function renderHome() {
 
 async function submitEmailStep(email: string) {
   await userEvent.type(screen.getByLabelText('Email'), email)
-  await userEvent.click(screen.getByRole('button', { name: 'Continue' }))
+  await userEvent.click(screen.getByRole('button', { name: 'Continue with email' }))
 }
 
 describe('HomePage', () => {
@@ -64,17 +64,25 @@ describe('HomePage', () => {
     clearSession()
   })
 
-  it('shows the email-first step with an SSO fallback when anonymous', async () => {
+  it('shows the email-first step with separate Google and Microsoft sign-in buttons when anonymous', async () => {
     renderHome()
     await waitFor(() => expect(screen.getByLabelText('Email')).toBeInTheDocument())
-    expect(screen.getByRole('button', { name: 'Continue with Google or Microsoft' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Continue with Google' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Continue with Microsoft' })).toBeInTheDocument()
   })
 
-  it('starts the Hosted UI login flow from the SSO fallback', async () => {
+  it('starts the Hosted UI login flow direct-to-provider from the Google button', async () => {
     renderHome()
     await screen.findByLabelText('Email')
-    await userEvent.click(screen.getByRole('button', { name: 'Continue with Google or Microsoft' }))
-    expect(startLogin).toHaveBeenCalledTimes(1)
+    await userEvent.click(screen.getByRole('button', { name: 'Continue with Google' }))
+    expect(startLogin).toHaveBeenCalledWith('Google')
+  })
+
+  it('starts the Hosted UI login flow direct-to-provider from the Microsoft button', async () => {
+    renderHome()
+    await screen.findByLabelText('Email')
+    await userEvent.click(screen.getByRole('button', { name: 'Continue with Microsoft' }))
+    expect(startLogin).toHaveBeenCalledWith('Microsoft')
   })
 
   it('redirects an already-authenticated user straight to /sources', async () => {

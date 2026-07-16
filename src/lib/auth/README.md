@@ -19,10 +19,14 @@ is always proven by Heediq's own emailed code (D-089/D-090), never inferred from
   `heediq-api`'s `POST /auth/link/request-otp` / `POST /auth/link/verify-otp` /
   `POST /auth/link/confirm` instead, since D-089 unified native signup and linking onto the same
   backend flow.
-- `cognito-oauth.ts` — the Hosted-UI PKCE OAuth round trips: `startLogin()`/`exchangeCodeForTokens()`
-  for normal login (`/auth/callback`), `startProviderLink()`/`exchangeLinkCodeForTokens()` for
-  proactive provider linking (`/settings/link-callback`, D-083), plus `refreshTokens()` and
-  `logoutUrl()`.
+- `cognito-oauth.ts` — the Hosted-UI PKCE OAuth round trips: `startLogin(provider?)`/
+  `exchangeCodeForTokens()` for normal login (`/auth/callback`), `startProviderLink()`/
+  `exchangeLinkCodeForTokens()` for proactive provider linking (`/settings/link-callback`, D-083),
+  plus `refreshTokens()` and `logoutUrl()`. `startLogin`'s optional `provider` param (`'Google'` |
+  `'Microsoft'`) is passed through as Cognito's `identity_provider` query param, sending the user
+  straight to that IdP and skipping Cognito's own generic picker (D-118) — used by the separate
+  Google/Microsoft `IdentityProviderButton`s on `HomePage`
+  (`src/components/ui/IdentityProviderButton/README.md`); omitted, it falls back to the picker.
 - `pkce.ts` — PKCE verifier/challenge/state generation on Web Crypto, no external PKCE library.
 - `jwt.ts` — `decodeJwtPayload()`, a hand-written base64url JSON decode (no `jwt-decode` dependency,
   consistent with the "no new dependency" approach used throughout this module). Signature is never

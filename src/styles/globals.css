@@ -10,127 +10,39 @@
   }
 }
 
-/* LoadingMark keyframes — D-074. Copied verbatim from
-   design_handoff_heediq_brand/Heediq Style Guide.dc.html; do not hand-tune. */
-.heediq-loader-rotate {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: heediqRotate 5.5s ease-in-out infinite;
-}
+/* LoadingMark keyframes — D-116 (audio-waveform pulse, supersedes D-074's rotation). Each bar
+   scales height independently at a staggered phase; no group rotation. */
 .heediq-loader-bar {
   transform-box: fill-box;
+  transform-origin: center;
 }
 .heediq-bar-0 {
-  transform-origin: 50% 100%;
-  animation: heediqEarLeft 5.5s ease-in-out infinite;
-}
-.heediq-bar-3 {
-  transform-origin: 50% 100%;
-  animation: heediqEarRight 5.5s ease-in-out infinite;
+  animation: heediqWave 1.1s ease-in-out infinite;
+  animation-delay: 0s;
 }
 .heediq-bar-1 {
-  transform-origin: center;
-  animation: heediqFace1 5.5s ease-in-out infinite;
+  animation: heediqWave 1.1s ease-in-out infinite;
+  animation-delay: 0.12s;
 }
 .heediq-bar-2 {
-  transform-origin: center;
-  animation: heediqFace2 5.5s ease-in-out infinite;
+  animation: heediqWave 1.1s ease-in-out infinite;
+  animation-delay: 0.24s;
 }
-@keyframes heediqRotate {
-  0%,
-  20% {
-    transform: rotate(-12deg);
-  }
-  32% {
-    transform: rotate(7deg);
-  }
-  48%,
-  50%,
-  68% {
-    transform: rotate(-12deg);
-  }
-  78% {
-    transform: rotate(-6deg);
-  }
-  84% {
-    transform: rotate(-12deg);
-  }
-  92% {
-    transform: rotate(-9deg);
-  }
-  100% {
-    transform: rotate(-12deg);
-  }
+.heediq-bar-3 {
+  animation: heediqWave 1.1s ease-in-out infinite;
+  animation-delay: 0.36s;
 }
-@keyframes heediqEarLeft {
+@keyframes heediqWave {
   0%,
-  25%,
-  50%,
-  87%,
   100% {
+    transform: scaleY(0.4);
+  }
+  50% {
     transform: scaleY(1);
-  }
-  12% {
-    transform: scaleY(1.13);
-  }
-  75% {
-    transform: scaleY(0.9);
-  }
-}
-@keyframes heediqEarRight {
-  0%,
-  25%,
-  50%,
-  87%,
-  100% {
-    transform: scaleY(1);
-  }
-  12% {
-    transform: scaleY(0.9);
-  }
-  75% {
-    transform: scaleY(1.13);
-  }
-}
-@keyframes heediqFace1 {
-  0%,
-  100% {
-    transform: scaleY(1);
-  }
-  20% {
-    transform: scaleY(1.03);
-  }
-  40% {
-    transform: scaleY(0.98);
-  }
-  60% {
-    transform: scaleY(1.02);
-  }
-  80% {
-    transform: scaleY(0.98);
-  }
-}
-@keyframes heediqFace2 {
-  0%,
-  100% {
-    transform: scaleY(1);
-  }
-  22% {
-    transform: scaleY(0.98);
-  }
-  42% {
-    transform: scaleY(1.02);
-  }
-  62% {
-    transform: scaleY(0.98);
-  }
-  82% {
-    transform: scaleY(1.03);
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .heediq-loader-bar,
-  .heediq-loader-rotate {
+  .heediq-loader-bar {
     animation: none;
   }
 }

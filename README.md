@@ -23,8 +23,13 @@ installable, offline-capable (D-024).
   values) plus the D-072 status/semantic tokens (`success`, `danger`, `accent-bg`/`accent-border`
   for in-progress states). No `warning`/`info` tokens — no design currently calls for them.
 - `src/styles/globals.css` — also defines the `LoadingMark` component's keyframes/classes
-  (`heediq-loader-*`, D-074) once globally, copied verbatim from
-  `design_handoff_heediq_brand/Heediq Style Guide.dc.html`.
+  (`heediq-loader-*`, D-074/D-116 — an audio-waveform bar pulse, `heediqWave` keyframe) once
+  globally; SVG bar geometry is copied verbatim from
+  `design_handoff_heediq_brand/Heediq Style Guide.dc.html`, animation redesigned per D-116.
+- `src/lib/motion.ts` — shared Framer Motion tokens/variants (D-117): durations, easing, and
+  `pageVariants`/`fadeUpVariants`/`fadeXVariants`/`fadeVariants`/`scaleFadeVariants`/`toastVariants`.
+  Every mount/unmount animation (page transitions in `App.tsx`, `Modal`, `Toast`, `HomePage`'s
+  step swaps) draws from this one file — never a bespoke `motion.div` transition inline.
 - `tailwind.config.ts` — maps Tailwind theme (`colors`, `fontFamily`, `fontSize`, `spacing`,
   `borderRadius`) onto the CSS custom properties in `tokens.css`. Never hardcode a color/space/type
   value outside this file — extend the token set instead.
@@ -48,10 +53,14 @@ installable, offline-capable (D-024).
   set-password component (D-089), reused by `HomePage` (reactive linking + native signup) and
   `SettingsPage` (proactive "add a sign-in method"). See `src/features/auth/README.md`.
 - `src/components/ui/` — the UI kit: `Button`, `Spinner`, `Card`, `Badge` (D-072), `LoadingMark`
-  (D-074), `ErrorState`, `Input`, `Table`, `Modal`, `Checkbox`, `Select`, `Toast` (D-102 Phase 4 —
+  (D-074/D-116), `ErrorState`, `Input`, `Table`, `Modal`, `Checkbox`, `Select`, `Toast` (D-102 Phase 4 —
   `Table`/`Modal`/`Checkbox`/`Select` are Radix-based primitives added for the Roles/Groups/Users
   screens; `Toast` is the centralized success/error outcome-feedback primitive, `04-loading-and-feedback.md`
-  §7). Each has its own `README.md` (props/variants/states/usage) per `03-ui-kit.md` §9.
+  §7), `IdentityProviderButton` (D-118 — separate branded Google/Microsoft sign-in buttons that go
+  direct-to-provider via Cognito's `identity_provider` param, instead of a shared "Continue with SSO"
+  button routing through Cognito's own generic IdP picker). Each has its own `README.md`
+  (props/variants/states/usage) per `03-ui-kit.md` §9. `Modal` and `Toast` animate mount/unmount via
+  the shared motion system (`src/lib/motion.ts`, D-117).
 - `src/lib/rbac/` — `usePermissions` (TanStack Query hook over `GET /me`'s `effectivePermissions`)
   and `<Can permission="...">` (UX-only conditional render; the real authorization boundary is
   always server-side, D-102/D-105). See `src/lib/rbac/README.md`.
@@ -69,6 +78,9 @@ installable, offline-capable (D-024).
   card on `SettingsPage` shown only when the permission is present.
 - `public/brand/` — final logo assets (`heediq-logo.png`, `heediq-badge-bg.svg`,
   `heediq-stubs.svg`), copied verbatim from `design_handoff_heediq_brand/assets/` per D-073.
+- `public/icons/`, `public/favicon.ico` — the full favicon/PWA icon set (favicons, apple-touch,
+  android/maskable, mstile), copied from the workspace-root `icons/` folder (D-119); referenced by
+  both `index.html`'s `<link>` tags and `vite.config.ts`'s PWA manifest.
 - `src/routes/` — screen-level route components. `HomePage` (unified email-first sign-in/sign-up +
   cross-provider linking entry point, D-078/D-087), `AuthCallbackPage` (PKCE code exchange,
   loading/error branches), `SettingsPage`/`SettingsLinkCallbackPage` (proactive provider linking,
@@ -76,6 +88,8 @@ installable, offline-capable (D-024).
   `ProtectedRoute`, pending the library/detail build-out.
 - `src/routes/DevUiGalleryPage.tsx` — living component gallery (`03-ui-kit.md` §8), only mounted
   in dev builds.
+- `src/lib/pwa/` — `useInstallPrompt()`, capturing the browser's `beforeinstallprompt` event so the
+  Settings "Install app" card can trigger it on demand (D-119). See `src/lib/pwa/README.md`.
 
 ## Data Flow / How It Works
 - Server state (API reads/writes) goes through TanStack Query via `apiClient` in `src/lib/api-client.ts`.
@@ -94,6 +108,15 @@ installable, offline-capable (D-024).
   `custom:orgId`/`custom:role` land in the token from `heediq-api`'s PreTokenGeneration trigger
   (D-077, D-090), and `GET /me` works immediately after the first token exchange.
 - `ProtectedRoute` gates `/sources` and `/sources/:sourceId`; unauthenticated visits redirect to `/`.
+- **Motion (D-117)**: `App.tsx`'s `AnimatedRoutes` wraps the route table in Framer Motion's
+  `AnimatePresence` (keyed on `location.pathname`) for a fade + y-axis page-to-page transition. Any
+  UI element that mounts/unmounts (Modal, Toast, HomePage's step swaps) animates via the same shared
+  variants in `src/lib/motion.ts` — fade + axis-shift, `prefers-reduced-motion` honored throughout
+  (`useReducedMotion()` short-circuits to a static render).
+- **PWA (D-119)**: `vite-plugin-pwa` (`vite.config.ts`) precaches the app shell and registers a
+  service worker (`registerType: 'autoUpdate'`); API responses are never cached. `useInstallPrompt`
+  (`src/lib/pwa/`) surfaces install status/action to the Settings screen. Offline recording, queued
+  upload, and Wake Lock are backlog items, not built yet.
 
 ## Contracts
 - **Env vars** (build-time, inlined by Vite — see Gotchas): `VITE_API_BASE_URL`, `VITE_WS_BASE_URL`,
@@ -125,7 +148,7 @@ installable, offline-capable (D-024).
   `heediq-infra`'s WebSocket API (`WebSocketStack`) — connected to via `src/lib/ws/WsProvider.tsx`
   (D-110; see `src/lib/ws/README.md`). No feature consumes a pushed event yet (`SourcesLibraryPage`/
   `SourceDetailPage` are still stubs, D-069 build order) but the client transport is live.
-  `@heediq/shared` `^0.12.0` (bumped for `ws.ts` envelope/registry types).
+  `@heediq/shared` `^0.13.0`.
 - **Downstream**: none yet (this is the frontend leaf).
 - **Shared surfaces**: `@heediq/shared` version bumps; design tokens (`tokens.css`) if D-008 changes.
 
@@ -135,7 +158,10 @@ installable, offline-capable (D-024).
 - Component tests cover all declared states (default/hover/focus/disabled/loading/error) per kit
   component: `Button.test.tsx`, `Spinner.test.tsx`, `Card.test.tsx`, `Badge.test.tsx`,
   `LoadingMark.test.tsx`, `ErrorState.test.tsx`, `Input.test.tsx`, `Table.test.tsx`, `Modal.test.tsx`
-  (via composition in component tests), `Checkbox.test.tsx`, `Select.test.tsx`, `Toast.test.tsx`.
+  (via composition in component tests), `Checkbox.test.tsx`, `Select.test.tsx`, `Toast.test.tsx`,
+  `IdentityProviderButton.test.tsx`. `Toast.test.tsx` mocks `framer-motion` to a plain passthrough,
+  since fake timers don't deterministically resolve a real rAF-driven exit transition — the
+  dismiss/auto-dismiss assertions test toast state, not animation timing.
 - RBAC tests (D-102 Phase 4): `lib/rbac/__tests__/usePermissions.test.tsx`, `Can.test.tsx`;
   `features/rbac/__tests__/RoleForm.test.tsx`, `GroupForm.test.tsx`, `RolesPanel.test.tsx`,
   `GroupsPanel.test.tsx`, `UsersPanel.test.tsx`, `AssignmentsModal.test.tsx`;
@@ -155,7 +181,9 @@ installable, offline-capable (D-024).
   request; regression test for the production 404 that motivated D-088.
 - `src/lib/ws/__tests__/WsProvider.test.tsx` (D-110) — see `src/lib/ws/README.md` for the breakdown
   (connect/reconnect/backoff/dispatch, against a hand-rolled `FakeWebSocket`).
-- 42 test files / 177 tests total (`pnpm run test`).
+- `src/lib/pwa/__tests__/useInstallPrompt.test.ts` — dispatches synthetic `beforeinstallprompt`/
+  `appinstalled` events; see `src/lib/pwa/README.md`.
+- 44 test files / 190 tests total (`pnpm run test`).
 - No integration/E2E suites yet — add Playwright E2E once at least one real data screen exists
   behind auth.
 

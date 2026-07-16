@@ -1,14 +1,14 @@
 # LoadingMark
 
 ## Purpose
-Canonical loading indicator for page-level and section-level async waits (D-074,
+Canonical loading indicator for page-level and section-level async waits (D-074, D-116,
 `04-loading-and-feedback.md` §2–3) — replaces a generic spinner at that level. It does **not**
-replace `Spinner`, which stays the primitive for inline/button-level loading (§4). An animated,
-logo-derived 4-bar mark: the two outer bars read as "ears" (one perks up while the other dips), a
-single head-tilt follows, then the ears swap. Keyframes and SVG geometry are copied verbatim from
-`design_handoff_heediq_brand/Heediq Style Guide.dc.html` (defined once, globally, in
-`src/styles/globals.css` under the `heediq-loader-*` classes/`heediq*` keyframes — not duplicated
-per instance).
+replace `Spinner`, which stays the primitive for inline/button-level loading (§4). An animated
+4-bar mark styled as an audio-waveform pulse: each bar scales height independently at a staggered
+phase (no group rotation), matching Heediq's audio/transcription product identity (D-116). SVG bar
+geometry is unchanged from the original logo-derived mark; only the animation changed. Keyframes
+are defined once, globally, in `src/styles/globals.css` under the `heediq-loader-*` classes /
+`heediqWave` keyframe — not duplicated per instance.
 
 ## Props / variants
 - `size`: `sm` (28px, inline contexts) · `lg` (72px, standalone/page-transition, default)

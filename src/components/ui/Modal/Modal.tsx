@@ -1,7 +1,9 @@
 import type { HTMLAttributes, ReactNode } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { X } from 'lucide-react'
 import { cn } from '../../../lib/cn'
+import { fadeVariants, fastTransition, scaleFadeVariants } from '../../../lib/motion'
 
 export interface ModalProps {
   open: boolean
@@ -10,25 +12,51 @@ export interface ModalProps {
   closeLabel?: string
 }
 
-// Radix Dialog gives us focus trap + Esc/overlay-click close for free.
+// Radix Dialog gives us focus trap + Esc/overlay-click close for free. `forceMount` +
+// AnimatePresence keeps the overlay/content mounted through their exit animation (D-117) —
+// Radix would otherwise unmount them the instant `open` flips to false.
 function ModalRoot({ open, onOpenChange, children, closeLabel = 'Close' }: ModalProps) {
+  const reduceMotion = useReducedMotion()
+
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-black/50" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex max-h-[85vh] w-full max-w-md -translate-x-1/2 -translate-y-1/2 flex-col rounded-md border border-border bg-surface-1 shadow-lg focus:outline-none">
-          {children}
-          <Dialog.Close asChild>
-            <button
-              type="button"
-              aria-label={closeLabel}
-              className="absolute right-3 top-3 rounded-sm p-1 text-text-secondary transition-colors hover:bg-surface-2 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-            >
-              <X className="size-4" />
-            </button>
-          </Dialog.Close>
-        </Dialog.Content>
-      </Dialog.Portal>
+      <AnimatePresence>
+        {open ? (
+          <Dialog.Portal forceMount>
+            <Dialog.Overlay asChild forceMount>
+              <motion.div
+                className="fixed inset-0 z-40 bg-black/50"
+                variants={reduceMotion ? undefined : fadeVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                transition={fastTransition}
+              />
+            </Dialog.Overlay>
+            <Dialog.Content asChild forceMount>
+              <motion.div
+                className="fixed left-1/2 top-1/2 z-50 flex max-h-[85vh] w-full max-w-md -translate-x-1/2 -translate-y-1/2 flex-col rounded-md border border-border bg-surface-1 shadow-lg focus:outline-none"
+                variants={reduceMotion ? undefined : scaleFadeVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                transition={fastTransition}
+              >
+                {children}
+                <Dialog.Close asChild>
+                  <button
+                    type="button"
+                    aria-label={closeLabel}
+                    className="absolute right-3 top-3 rounded-sm p-1 text-text-secondary transition-colors hover:bg-surface-2 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                  >
+                    <X className="size-4" />
+                  </button>
+                </Dialog.Close>
+              </motion.div>
+            </Dialog.Content>
+          </Dialog.Portal>
+        ) : null}
+      </AnimatePresence>
     </Dialog.Root>
   )
 }

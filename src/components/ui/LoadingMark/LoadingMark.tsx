@@ -57,12 +57,10 @@ export function LoadingMark({
         </defs>
       ) : null}
       <g transform="translate(55.4,51.2)">
-        <g className="heediq-loader-rotate">
-          <rect className="heediq-loader-bar heediq-bar-0" x="-37.5" y="-35" width="14" height="66" rx="7" fill={fill} />
-          <rect className="heediq-loader-bar heediq-bar-1" x="-15.5" y="-21" width="14" height="52" rx="7" fill={fill} />
-          <rect className="heediq-loader-bar heediq-bar-2" x="6.5" y="-21" width="14" height="52" rx="7" fill={fill} />
-          <rect className="heediq-loader-bar heediq-bar-3" x="28.5" y="-40" width="14" height="71" rx="7" fill={fill} />
-        </g>
+        <rect className="heediq-loader-bar heediq-bar-0" x="-37.5" y="-35" width="14" height="66" rx="7" fill={fill} />
+        <rect className="heediq-loader-bar heediq-bar-1" x="-15.5" y="-21" width="14" height="52" rx="7" fill={fill} />
+        <rect className="heediq-loader-bar heediq-bar-2" x="6.5" y="-21" width="14" height="52" rx="7" fill={fill} />
+        <rect className="heediq-loader-bar heediq-bar-3" x="28.5" y="-40" width="14" height="71" rx="7" fill={fill} />
       </g>
     </svg>
   )
