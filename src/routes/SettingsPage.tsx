@@ -10,11 +10,13 @@ import type { LinkableProvider } from '../lib/auth/cognito-oauth'
 import { apiClient } from '../lib/api-client'
 import type { GetMeResponse } from '../lib/rbac/types'
 import { Can } from '../lib/rbac/Can'
+import { useInstallPrompt } from '../lib/pwa/useInstallPrompt'
 
 export function SettingsPage() {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [settingPassword, setSettingPassword] = useState(false)
+  const { canInstall, installed, promptInstall } = useInstallPrompt()
 
   const meQuery = useQuery({
     queryKey: ['me'],
@@ -108,6 +110,24 @@ export function SettingsPage() {
             )}
           </Card.Content>
         </Card>
+
+        {canInstall || installed ? (
+          <Card>
+            <Card.Header>
+              <Card.Title>{t('settings.install.title')}</Card.Title>
+              <Card.Description>{t('settings.install.description')}</Card.Description>
+            </Card.Header>
+            <Card.Content>
+              {installed ? (
+                <Badge tone="active">{t('settings.install.installed')}</Badge>
+              ) : (
+                <Button type="button" variant="secondary" onClick={() => void promptInstall()}>
+                  {t('settings.install.action')}
+                </Button>
+              )}
+            </Card.Content>
+          </Card>
+        ) : null}
 
         <Can permission="org:manage-roles">
           <Card>
