@@ -13,7 +13,10 @@ upload, and Wake Lock are explicit backlog items, not covered here.
 - `../../routes/SettingsPage.tsx` — renders an "Install app" card using this hook (shown only when
   installable or already installed).
 - `../../../vite.config.ts` — `vite-plugin-pwa` config: manifest (name, icons, theme/background
-  color, `display: standalone`) + `generateSW` service worker.
+  color, `display: standalone`) + `generateSW` service worker. Manifest `name`/`short_name` are
+  derived from `VITE_APP_ENV` (D-121) so an installed PWA is visually distinguishable per
+  environment — `Heediq` in production, `Heediq (Staging)`/`Heediq (Dev)` otherwise, `Heediq
+  (Local)` when unset (`pnpm dev` / a local build).
 - `../../../public/icons/` — the full icon set (favicons, apple-touch, android/maskable, mstile),
   copied from the workspace-root `icons/` folder. `public/favicon.ico` is the classic favicon copy.
 
@@ -44,6 +47,10 @@ asserts `canInstall`/`installed`/`promptInstall()` transitions. `matchMedia` is 
 jsdom by default — `isStandalone()` guards with a `typeof` check rather than assuming it exists.
 
 ## Gotchas & Constraints
+- **Per-environment app name (D-121).** `VITE_APP_ENV` (`dev`/`staging`/`production`) is set in
+  `deploy.yml`'s `Build` step for each of the three deploy jobs — a new env var added there means
+  a new environment must also be added to `appNameFor()` in `vite.config.ts`, or it silently falls
+  back to `Heediq (Local)`.
 - **No runtime caching for API calls.** The service worker's `globPatterns` only precaches the app
   shell (`js,css,html,svg,png,ico,woff2`) — API responses (transcripts, recordings) are never cached,
   since they're per-org sensitive data that must always come from the network.

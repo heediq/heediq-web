@@ -93,6 +93,7 @@ jobs:
           VITE_COGNITO_DOMAIN: ${{ steps.ssm.outputs.cognito_domain }}
           VITE_COGNITO_CLIENT_ID: ${{ steps.ssm.outputs.cognito_client_id }}
           VITE_COGNITO_REGION: ${{ vars.AWS_REGION }}
+          VITE_APP_ENV: dev
 
       - name: Sync to S3
         run: aws s3 sync dist/ "s3://${{ steps.ssm.outputs.bucket_name }}" --delete
@@ -153,6 +154,7 @@ jobs:
           VITE_COGNITO_DOMAIN: ${{ steps.ssm.outputs.cognito_domain }}
           VITE_COGNITO_CLIENT_ID: ${{ steps.ssm.outputs.cognito_client_id }}
           VITE_COGNITO_REGION: ${{ vars.AWS_REGION }}
+          VITE_APP_ENV: staging
 
       - name: Sync to S3
         run: aws s3 sync dist/ "s3://${{ steps.ssm.outputs.bucket_name }}" --delete
@@ -213,6 +215,7 @@ jobs:
           VITE_COGNITO_DOMAIN: ${{ steps.ssm.outputs.cognito_domain }}
           VITE_COGNITO_CLIENT_ID: ${{ steps.ssm.outputs.cognito_client_id }}
           VITE_COGNITO_REGION: ${{ vars.AWS_REGION }}
+          VITE_APP_ENV: production
 
       - name: Sync to S3
         run: aws s3 sync dist/ "s3://${{ steps.ssm.outputs.bucket_name }}" --delete
