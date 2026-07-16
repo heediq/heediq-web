@@ -8,7 +8,8 @@ wired to any button, and `/settings` (proactive provider linking, D-083) was onl
 the URL.
 
 ## Key Files
-- `TopBar.tsx` — app name link (`/sources`), Settings nav link, Logout button wired to `useAuth().logout()`.
+- `TopBar.tsx` — app name link (`/sources`) pairing the `Logo` kit component with the wordmark, Settings
+  nav link, Logout button wired to `useAuth().logout()`.
 - `AppShell.tsx` — wraps `TopBar` + a `<main>` content area around a screen's content.
 
 ## Data Flow / How It Works
@@ -20,7 +21,7 @@ it isn't passed auth state as props.
 None (UI-only, no API/data contract).
 
 ## Dependencies
-- Upstream: `components/ui` (`Button`), `lib/auth/AuthContext` (`useAuth`).
+- Upstream: `components/ui` (`Button`, `Logo`), `lib/auth/AuthContext` (`useAuth`).
 - Downstream: any screen mounted inside `AppShell` — currently `SourcesLibraryPage`, `SourceDetailPage`,
   `SettingsPage`. Those pages use `flex-1` (not `min-h-screen`) for their own centering, since `AppShell`
   already supplies the full-height wrapper — don't reintroduce `min-h-screen` in a child page or the

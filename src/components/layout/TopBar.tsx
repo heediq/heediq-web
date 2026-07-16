@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
-import { Button } from '../ui'
+import { Button, Logo } from '../ui'
 import { useAuth } from '../../lib/auth/AuthContext'
 
 export function TopBar() {
@@ -9,7 +9,8 @@ export function TopBar() {
 
   return (
     <header className="flex h-14 items-center justify-between border-b border-border px-4">
-      <Link to="/sources" className="text-h2 text-text-primary">
+      <Link to="/sources" className="flex items-center gap-2 text-h2 text-text-primary">
+        <Logo size="sm" />
         {t('home.title')}
       </Link>
       <nav className="flex items-center gap-2">
