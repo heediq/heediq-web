@@ -155,7 +155,7 @@ installable, offline-capable (D-024).
   request; regression test for the production 404 that motivated D-088.
 - `src/lib/ws/__tests__/WsProvider.test.tsx` (D-110) — see `src/lib/ws/README.md` for the breakdown
   (connect/reconnect/backoff/dispatch, against a hand-rolled `FakeWebSocket`).
-- 41 test files / 171 tests total (`pnpm run test`).
+- 42 test files / 177 tests total (`pnpm run test`).
 - No integration/E2E suites yet — add Playwright E2E once at least one real data screen exists
   behind auth.
 
