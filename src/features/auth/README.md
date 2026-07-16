@@ -22,15 +22,23 @@ prompt after logging out and re-entering the same email natively — the bug tha
 
 ## Data Flow / How It Works
 On mount, the component calls `POST /auth/link/request-otp` itself (callers never trigger the OTP
-send separately). Four phases: `sendingCode` (brief loading state) → `code` (enter the emailed
-code; submitting calls `POST /auth/link/verify-otp` — only advances to `password` on success,
-otherwise shows an inline error and stays on the code screen) → `password` (create + confirm
-password fields; mismatched values error inline without a network call); or `rateLimited` instead of
-`code`, if `request-otp` itself comes back `RATE_LIMITED` (D-097) — no code was actually sent, so the
-component shows a dedicated `ErrorState` with retry rather than a code-entry screen that has nothing
-to verify. Final submit calls `POST /auth/link/confirm` with `{ email, newPassword }` (no `code` — it
-was already consumed by `verify-otp`); on success it calls the caller-supplied `onSuccess(password)`
-and lets the caller decide what happens next.
+send separately). Five phases: `sendingCode` (brief loading state) → `sent` (a fixed ~500ms
+confirmation beat — checkmark + "Code sent to {email}" — before the code input appears, so the send
+doesn't feel instantaneous/opaque; min-display-time pattern per `04-loading-and-feedback.md` §10) →
+`code` (enter the emailed code; submitting calls `POST /auth/link/verify-otp` — only advances to
+`password` on success, otherwise shows an inline error and stays on the code screen) → `password`
+(create + confirm password fields; mismatched values error inline without a network call); or
+`rateLimited` instead of `sent`/`code`, if `request-otp` itself comes back `RATE_LIMITED` (D-097) — no
+code was actually sent, so the component shows a dedicated `ErrorState` with retry rather than a
+code-entry screen that has nothing to verify. Final submit calls `POST /auth/link/confirm` with
+`{ email, newPassword }` (no `code` — it was already consumed by `verify-otp`); on success it calls
+the caller-supplied `onSuccess(password)` and lets the caller decide what happens next.
+
+Every phase transition renders through `AnimatePresence` + the shared `fadeUpVariants`
+(`src/lib/motion.ts`, D-117) instead of an instant swap. The `code` and `password` submits go through
+the shared `useAsyncAction` hook (`src/lib/useAsyncAction.ts`) rather than local `submitting` state, so
+a rapid double-click on "Continue"/"Set password" can't fire the request twice
+(`04-loading-and-feedback.md` §4).
 
 ## Contracts
 - Props: `email: string` (the address to verify — caller resolves this, e.g. from the sign-in form
@@ -63,16 +71,18 @@ and lets the caller decide what happens next.
 
 ## Testing
 `__tests__/VerifyAndSetPasswordForm.test.tsx` covers every phase in isolation (OTP-send loading
-state, OTP-send failure still advancing to the code step, code verified via `link/verify-otp`
-before advancing to password, an invalid code staying on the code step with an inline error,
-password mismatch, successful submit calling `onSuccess`, `link/confirm` failure, and the optional
-back button), plus the live password checklist disabling/enabling submit as rules are satisfied and
-the specific `WEAK_PASSWORD` error message on a policy rejection, and the `RATE_LIMITED` handling on
-both `request-otp` (dedicated error state, retry re-fires the send) and `verify-otp` (distinct inline
-message on the code step), with `apiClient` mocked. Page-level
-tests (`HomePage.test.tsx`, `SettingsPage.test.tsx`) exercise the same component through the real DOM
-but don't re-assert every phase — they check the handoff (correct `email` passed in, `onSuccess`
-wired to the right caller behavior).
+state, OTP-send failure still advancing to the code step, the `sent` confirmation phase appearing
+before the code step, code verified via `link/verify-otp` before advancing to password, an invalid
+code staying on the code step with an inline error, password mismatch, successful submit calling
+`onSuccess`, `link/confirm` failure, and the optional back button), plus the live password checklist
+disabling/enabling submit as rules are satisfied, the specific `WEAK_PASSWORD` error message on a
+policy rejection, the `RATE_LIMITED` handling on both `request-otp` (dedicated error state, retry
+re-fires the send) and `verify-otp` (distinct inline message on the code step), and a double-submit
+guard regression test for each of the code and set-password submit buttons (rapid double-click calls
+the backend exactly once), with `apiClient` mocked. Page-level tests (`HomePage.test.tsx`,
+`SettingsPage.test.tsx`) exercise the same component through the real DOM but don't re-assert every
+phase — they check the handoff (correct `email` passed in, `onSuccess` wired to the right caller
+behavior).
 
 ## Gotchas & Constraints
 - The two-step (code, then password) structure is a locked decision (D-089), not a UI preference —
