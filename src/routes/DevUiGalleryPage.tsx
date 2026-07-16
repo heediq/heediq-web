@@ -6,6 +6,7 @@ import {
   Card,
   Checkbox,
   ErrorState,
+  IdentityProviderButton,
   Input,
   LoadingMark,
   Modal,
@@ -140,6 +141,16 @@ export function DevUiGalleryPage() {
             <Button onClick={() => setModalOpen(false)}>Confirm</Button>
           </Modal.Footer>
         </Modal>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-h2">IdentityProviderButton</h2>
+        <div className="flex max-w-sm flex-col gap-2">
+          <IdentityProviderButton provider="Google" onClick={() => {}} />
+          <IdentityProviderButton provider="Microsoft" onClick={() => {}} />
+          <IdentityProviderButton provider="Google" loading onClick={() => {}} />
+          <IdentityProviderButton provider="Microsoft" disabled onClick={() => {}} />
+        </div>
       </section>
 
       <section className="flex flex-col gap-3">

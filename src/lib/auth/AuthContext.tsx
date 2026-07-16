@@ -1,14 +1,14 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { setAccessTokenGetter } from '../api-client'
-import { logoutUrl, refreshTokens, startLogin, type TokenResponse } from './cognito-oauth'
+import { logoutUrl, refreshTokens, startLogin, type LinkableProvider, type TokenResponse } from './cognito-oauth'
 import { clearSession, getIdToken, getRefreshToken, setRefreshToken, setSession } from './token-store'
 
 type AuthStatus = 'loading' | 'authenticated' | 'anonymous'
 
 interface AuthContextValue {
   status: AuthStatus
-  login: () => Promise<void>
+  login: (provider?: LinkableProvider) => Promise<void>
   logout: () => void
   applyTokens: (tokens: TokenResponse) => void
 }
@@ -46,7 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setStatus('authenticated')
   }, [])
 
-  const login = useCallback(() => startLogin(), [])
+  const login = useCallback((provider?: LinkableProvider) => startLogin(provider), [])
 
   const logout = useCallback(() => {
     clearSession()

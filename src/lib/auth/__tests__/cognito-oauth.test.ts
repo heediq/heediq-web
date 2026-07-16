@@ -46,6 +46,24 @@ describe('cognito-oauth', () => {
       expect(sessionStorage.getItem('heediq.pkce.verifier')).toBeTruthy()
       expect(sessionStorage.getItem('heediq.pkce.state')).toBeTruthy()
     })
+
+    it('omits identity_provider when no provider is given, landing on Cognito\'s own IdP picker', async () => {
+      await startLogin()
+      const url = new URL((window.location.assign as ReturnType<typeof vi.fn>).mock.calls[0][0])
+      expect(url.searchParams.has('identity_provider')).toBe(false)
+    })
+
+    it('adds identity_provider=Google to go straight to Google, skipping the picker (D-118)', async () => {
+      await startLogin('Google')
+      const url = new URL((window.location.assign as ReturnType<typeof vi.fn>).mock.calls[0][0])
+      expect(url.searchParams.get('identity_provider')).toBe('Google')
+    })
+
+    it('adds identity_provider=Microsoft to go straight to Microsoft, skipping the picker (D-118)', async () => {
+      await startLogin('Microsoft')
+      const url = new URL((window.location.assign as ReturnType<typeof vi.fn>).mock.calls[0][0])
+      expect(url.searchParams.get('identity_provider')).toBe('Microsoft')
+    })
   })
 
   describe('exchangeCodeForTokens', () => {

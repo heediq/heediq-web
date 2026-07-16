@@ -16,9 +16,10 @@
   "home": {
     "title": "heediq",
     "emailLabel": "Email",
-    "continue": "Continue",
+    "continue": "Continue with email",
     "orDivider": "or",
-    "continueWithSso": "Continue with Google or Microsoft",
+    "continueWithGoogle": "Continue with Google",
+    "continueWithMicrosoft": "Continue with Microsoft",
     "backToEmail": "Use a different email",
     "signIn": {
       "passwordLabel": "Password",
@@ -97,6 +98,12 @@
         "Google": "Google",
         "Microsoft": "Microsoft"
       }
+    },
+    "install": {
+      "title": "Install app",
+      "description": "Install Heediq for quick access from your desktop or home screen.",
+      "action": "Install",
+      "installed": "Installed on this device"
     }
   },
   "rolesSettings": {

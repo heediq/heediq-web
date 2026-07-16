@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import type { LookupEmailResponse } from '@heediq/shared'
-import { Button, Input, LoadingMark } from '../components/ui'
+import { Button, IdentityProviderButton, Input, LoadingMark } from '../components/ui'
+import type { IdentityProvider } from '../components/ui'
 import { VerifyAndSetPasswordForm } from '../features/auth/VerifyAndSetPasswordForm'
 import { useAuth } from '../lib/auth/AuthContext'
 import { apiClient } from '../lib/api-client'
+import { fadeXVariants, transition } from '../lib/motion'
 import {
   CognitoIdpError,
   confirmForgotPassword,
@@ -43,6 +46,8 @@ export function HomePage() {
   const [newPassword, setNewPassword] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [ssoProvider, setSsoProvider] = useState<IdentityProvider | null>(null)
+  const reduceMotion = useReducedMotion()
 
   useEffect(() => {
     if (status === 'authenticated') navigate('/sources', { replace: true })
@@ -128,6 +133,11 @@ export function HomePage() {
     }
   }
 
+  function handleSsoClick(provider: IdentityProvider) {
+    setSsoProvider(provider)
+    void login(provider)
+  }
+
   function resetToEmailStep() {
     setStep('email')
     setPassword('')
@@ -150,101 +160,123 @@ export function HomePage() {
         <h1 className="text-display">{t('home.title')}</h1>
       </div>
 
-      <div className="flex w-full max-w-sm flex-col gap-4">
-        {step === 'email' ? (
-          <form className="flex flex-col gap-4" onSubmit={(e) => void handleEmailSubmit(e)}>
-            <Input
-              label={t('home.emailLabel')}
-              type="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-            {error ? (
-              <p role="alert" className="text-caption text-danger">
-                {error}
-              </p>
+      <div className="flex w-full max-w-sm flex-col gap-4 overflow-hidden">
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={step}
+            variants={reduceMotion ? undefined : fadeXVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={transition}
+          >
+            {step === 'email' ? (
+              <form className="flex flex-col gap-4" onSubmit={(e) => void handleEmailSubmit(e)}>
+                <IdentityProviderButton
+                  provider="Google"
+                  loading={ssoProvider === 'Google'}
+                  disabled={ssoProvider !== null && ssoProvider !== 'Google'}
+                  onClick={() => handleSsoClick('Google')}
+                />
+                <IdentityProviderButton
+                  provider="Microsoft"
+                  loading={ssoProvider === 'Microsoft'}
+                  disabled={ssoProvider !== null && ssoProvider !== 'Microsoft'}
+                  onClick={() => handleSsoClick('Microsoft')}
+                />
+                <div className="flex items-center gap-3 text-caption text-text-secondary">
+                  <span className="h-px flex-1 bg-border" />
+                  {t('home.orDivider')}
+                  <span className="h-px flex-1 bg-border" />
+                </div>
+                <Input
+                  label={t('home.emailLabel')}
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+                {error ? (
+                  <p role="alert" className="text-caption text-danger">
+                    {error}
+                  </p>
+                ) : null}
+                <Button type="submit" variant="primary" loading={submitting}>
+                  {t('home.continue')}
+                </Button>
+              </form>
             ) : null}
-            <Button type="submit" variant="primary" loading={submitting}>
-              {t('home.continue')}
-            </Button>
-            <div className="flex items-center gap-3 text-caption text-text-secondary">
-              <span className="h-px flex-1 bg-border" />
-              {t('home.orDivider')}
-              <span className="h-px flex-1 bg-border" />
-            </div>
-            <Button type="button" variant="secondary" onClick={() => void login()}>
-              {t('home.continueWithSso')}
-            </Button>
-          </form>
-        ) : null}
 
-        {step === 'verify' ? (
-          <VerifyAndSetPasswordForm
-            email={email}
-            onBack={resetToEmailStep}
-            onSuccess={(passwordUsed) => signInWithPassword(email, passwordUsed)}
-          />
-        ) : null}
-
-        {step === 'signIn' ? (
-          <form className="flex flex-col gap-4" onSubmit={(e) => void handleSignInSubmit(e)}>
-            <Input label={t('home.emailLabel')} type="email" value={email} disabled />
-            <Input
-              label={t('home.signIn.passwordLabel')}
-              type="password"
-              autoComplete="current-password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-            {error ? (
-              <p role="alert" className="text-caption text-danger">
-                {error}
-              </p>
+            {step === 'verify' ? (
+              <VerifyAndSetPasswordForm
+                email={email}
+                onBack={resetToEmailStep}
+                onSuccess={(passwordUsed) => signInWithPassword(email, passwordUsed)}
+              />
             ) : null}
-            <Button type="submit" variant="primary" loading={submitting}>
-              {t('home.signIn.submit')}
-            </Button>
-            <Button type="button" variant="ghost" onClick={() => void handleForgotPasswordClick()}>
-              {t('home.signIn.forgotPassword')}
-            </Button>
-            <Button type="button" variant="ghost" onClick={resetToEmailStep}>
-              {t('home.backToEmail')}
-            </Button>
-          </form>
-        ) : null}
 
-        {step === 'forgotCode' ? (
-          <form className="flex flex-col gap-4" onSubmit={(e) => void handleForgotCodeSubmit(e)}>
-            <p className="text-body text-text-secondary">{t('home.forgot.description', { email })}</p>
-            <Input
-              label={t('home.forgot.codeLabel')}
-              autoComplete="one-time-code"
-              required
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-            />
-            <Input
-              label={t('home.forgot.newPasswordLabel')}
-              type="password"
-              autoComplete="new-password"
-              required
-              minLength={8}
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-            />
-            {error ? (
-              <p role="alert" className="text-caption text-danger">
-                {error}
-              </p>
+            {step === 'signIn' ? (
+              <form className="flex flex-col gap-4" onSubmit={(e) => void handleSignInSubmit(e)}>
+                <Input label={t('home.emailLabel')} type="email" value={email} disabled />
+                <Input
+                  label={t('home.signIn.passwordLabel')}
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                {error ? (
+                  <p role="alert" className="text-caption text-danger">
+                    {error}
+                  </p>
+                ) : null}
+                <Button type="submit" variant="primary" loading={submitting}>
+                  {t('home.signIn.submit')}
+                </Button>
+                <Button type="button" variant="ghost" onClick={() => void handleForgotPasswordClick()}>
+                  {t('home.signIn.forgotPassword')}
+                </Button>
+                <Button type="button" variant="ghost" onClick={resetToEmailStep}>
+                  {t('home.backToEmail')}
+                </Button>
+              </form>
             ) : null}
-            <Button type="submit" variant="primary" loading={submitting}>
-              {t('home.forgot.submit')}
-            </Button>
-          </form>
-        ) : null}
+
+            {step === 'forgotCode' ? (
+              <form className="flex flex-col gap-4" onSubmit={(e) => void handleForgotCodeSubmit(e)}>
+                <p className="text-body text-text-secondary">
+                  {t('home.forgot.description', { email })}
+                </p>
+                <Input
+                  label={t('home.forgot.codeLabel')}
+                  autoComplete="one-time-code"
+                  required
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                />
+                <Input
+                  label={t('home.forgot.newPasswordLabel')}
+                  type="password"
+                  autoComplete="new-password"
+                  required
+                  minLength={8}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                />
+                {error ? (
+                  <p role="alert" className="text-caption text-danger">
+                    {error}
+                  </p>
+                ) : null}
+                <Button type="submit" variant="primary" loading={submitting}>
+                  {t('home.forgot.submit')}
+                </Button>
+              </form>
+            ) : null}
+          </motion.div>
+        </AnimatePresence>
       </div>
     </div>
   )
