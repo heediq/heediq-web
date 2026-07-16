@@ -37,6 +37,15 @@ describe('Button', () => {
     expect(onClick).not.toHaveBeenCalled()
   })
 
+  it('animates its focus ring, color, and disabled-state transitions via token-driven classes', () => {
+    render(<Button>Save</Button>)
+    const button = screen.getByRole('button')
+    // Regression: box-shadow (the focus ring) and opacity (the disabled state) must be in the
+    // transitioned property list, or they snap instantly instead of animating in/out.
+    expect(button.className).toMatch(/transition-\[background-color,color,border-color,box-shadow,opacity\]/)
+    expect(button.className).toContain('duration-base')
+  })
+
   it('renders as its child element via asChild without crashing on Slot child count', () => {
     render(
       <Button asChild variant="ghost">

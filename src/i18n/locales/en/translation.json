@@ -1,5 +1,6 @@
 {
   "common": {
+    "logoAlt": "Heediq",
     "loading": "Loading",
     "retry": "Retry",
     "checkingSession": "Checking your session",
@@ -36,6 +37,7 @@
   "auth": {
     "verify": {
       "sendingCode": "Sending a code to {{email}}",
+      "codeSent": "Code sent to {{email}}",
       "sendCodeError": "We couldn't send a code. You can still enter one below if you already have it.",
       "codeDescription": "Enter the code we sent to {{email}}.",
       "codeLabel": "Verification code",

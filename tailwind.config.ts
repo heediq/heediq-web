@@ -51,6 +51,16 @@ export default {
         lg: '24px',
         full: '9999px',
       },
+      transitionDuration: {
+        fast: '150ms',
+        base: '200ms',
+        slow: '300ms',
+      },
+      transitionTimingFunction: {
+        // Same curve as src/lib/motion.ts's motionEase, so CSS transitions and
+        // Framer Motion animations feel like one system (D-117).
+        brand: 'cubic-bezier(0.16, 1, 0.3, 1)',
+      },
     },
   },
   plugins: [],

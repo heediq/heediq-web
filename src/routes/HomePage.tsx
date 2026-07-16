@@ -4,12 +4,13 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import type { LookupEmailResponse } from '@heediq/shared'
-import { Button, IdentityProviderButton, Input, LoadingMark } from '../components/ui'
+import { Button, IdentityProviderButton, Input, LoadingMark, Logo } from '../components/ui'
 import type { IdentityProvider } from '../components/ui'
 import { VerifyAndSetPasswordForm } from '../features/auth/VerifyAndSetPasswordForm'
 import { useAuth } from '../lib/auth/AuthContext'
 import { apiClient } from '../lib/api-client'
 import { fadeXVariants, transition } from '../lib/motion'
+import { useAsyncAction } from '../lib/useAsyncAction'
 import {
   CognitoIdpError,
   confirmForgotPassword,
@@ -44,7 +45,6 @@ export function HomePage() {
   const [password, setPassword] = useState('')
   const [code, setCode] = useState('')
   const [newPassword, setNewPassword] = useState('')
-  const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [ssoProvider, setSsoProvider] = useState<IdentityProvider | null>(null)
   const reduceMotion = useReducedMotion()
@@ -73,10 +73,8 @@ export function HomePage() {
     navigate('/sources', { replace: true })
   }
 
-  async function handleEmailSubmit(e: FormEvent) {
-    e.preventDefault()
+  const emailAction = useAsyncAction(async () => {
     setError('')
-    setSubmitting(true)
     try {
       const result = await apiClient.post<LookupEmailResponse>('/auth/lookup-email', { email })
       if (result.exists && result.passwordSet) {
@@ -88,49 +86,51 @@ export function HomePage() {
       }
     } catch {
       setError(t('errors.auth.generic'))
-    } finally {
-      setSubmitting(false)
     }
-  }
+  })
 
-  async function handleSignInSubmit(e: FormEvent) {
-    e.preventDefault()
+  const signInAction = useAsyncAction(async () => {
     setError('')
-    setSubmitting(true)
     try {
       await signInWithPassword(email, password)
     } catch (err) {
       setError(authErrorMessage(err))
-    } finally {
-      setSubmitting(false)
     }
-  }
+  })
 
-  async function handleForgotPasswordClick() {
+  const forgotPasswordAction = useAsyncAction(async () => {
     setError('')
-    setSubmitting(true)
     try {
       await forgotPassword(email)
       setStep('forgotCode')
     } catch (err) {
       setError(authErrorMessage(err))
-    } finally {
-      setSubmitting(false)
     }
-  }
+  })
 
-  async function handleForgotCodeSubmit(e: FormEvent) {
-    e.preventDefault()
+  const forgotCodeAction = useAsyncAction(async () => {
     setError('')
-    setSubmitting(true)
     try {
       await confirmForgotPassword(email, code, newPassword)
       await signInWithPassword(email, newPassword)
     } catch (err) {
       setError(authErrorMessage(err))
-    } finally {
-      setSubmitting(false)
     }
+  })
+
+  function handleEmailSubmit(e: FormEvent) {
+    e.preventDefault()
+    void emailAction.run()
+  }
+
+  function handleSignInSubmit(e: FormEvent) {
+    e.preventDefault()
+    void signInAction.run()
+  }
+
+  function handleForgotCodeSubmit(e: FormEvent) {
+    e.preventDefault()
+    void forgotCodeAction.run()
   }
 
   function handleSsoClick(provider: IdentityProvider) {
@@ -155,12 +155,15 @@ export function HomePage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-6 p-4">
+    <div className="flex min-h-screen flex-col items-center justify-start gap-6 p-4 pt-[20vh]">
       <div className="flex flex-col items-center gap-2 text-center">
-        <h1 className="text-display">{t('home.title')}</h1>
+        <div className="flex items-center gap-2">
+          <Logo size="lg" />
+          <h1 className="text-display">{t('home.title')}</h1>
+        </div>
       </div>
 
-      <div className="flex w-full max-w-sm flex-col gap-4 overflow-hidden">
+      <div className="flex w-full max-w-sm flex-col gap-4 overflow-hidden px-1">
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={step}
@@ -171,7 +174,7 @@ export function HomePage() {
             transition={transition}
           >
             {step === 'email' ? (
-              <form className="flex flex-col gap-4" onSubmit={(e) => void handleEmailSubmit(e)}>
+              <form className="flex flex-col gap-4" onSubmit={handleEmailSubmit}>
                 <IdentityProviderButton
                   provider="Google"
                   loading={ssoProvider === 'Google'}
@@ -202,7 +205,7 @@ export function HomePage() {
                     {error}
                   </p>
                 ) : null}
-                <Button type="submit" variant="primary" loading={submitting}>
+                <Button type="submit" variant="primary" loading={emailAction.pending}>
                   {t('home.continue')}
                 </Button>
               </form>
@@ -217,7 +220,7 @@ export function HomePage() {
             ) : null}
 
             {step === 'signIn' ? (
-              <form className="flex flex-col gap-4" onSubmit={(e) => void handleSignInSubmit(e)}>
+              <form className="flex flex-col gap-4" onSubmit={handleSignInSubmit}>
                 <Input label={t('home.emailLabel')} type="email" value={email} disabled />
                 <Input
                   label={t('home.signIn.passwordLabel')}
@@ -232,10 +235,15 @@ export function HomePage() {
                     {error}
                   </p>
                 ) : null}
-                <Button type="submit" variant="primary" loading={submitting}>
+                <Button type="submit" variant="primary" loading={signInAction.pending}>
                   {t('home.signIn.submit')}
                 </Button>
-                <Button type="button" variant="ghost" onClick={() => void handleForgotPasswordClick()}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  loading={forgotPasswordAction.pending}
+                  onClick={() => void forgotPasswordAction.run()}
+                >
                   {t('home.signIn.forgotPassword')}
                 </Button>
                 <Button type="button" variant="ghost" onClick={resetToEmailStep}>
@@ -245,7 +253,7 @@ export function HomePage() {
             ) : null}
 
             {step === 'forgotCode' ? (
-              <form className="flex flex-col gap-4" onSubmit={(e) => void handleForgotCodeSubmit(e)}>
+              <form className="flex flex-col gap-4" onSubmit={handleForgotCodeSubmit}>
                 <p className="text-body text-text-secondary">
                   {t('home.forgot.description', { email })}
                 </p>
@@ -270,7 +278,7 @@ export function HomePage() {
                     {error}
                   </p>
                 ) : null}
-                <Button type="submit" variant="primary" loading={submitting}>
+                <Button type="submit" variant="primary" loading={forgotCodeAction.pending}>
                   {t('home.forgot.submit')}
                 </Button>
               </form>

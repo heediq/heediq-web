@@ -26,14 +26,25 @@ describe('VerifyAndSetPasswordForm', () => {
     expect(screen.getByText('Sending a code to a@b.com')).toBeInTheDocument()
 
     await waitFor(() => expect(postMock).toHaveBeenCalledWith('/auth/link/request-otp', { email: 'a@b.com' }))
-    expect(await screen.findByLabelText('Verification code')).toBeInTheDocument()
+    expect(await screen.findByLabelText('Verification code', {}, { timeout: 2000 })).toBeInTheDocument()
+  })
+
+  it('shows a brief "code sent" confirmation before revealing the code step (phase order: sendingCode -> sent -> code)', async () => {
+    postMock.mockResolvedValue({ sent: true })
+    render(<VerifyAndSetPasswordForm email="a@b.com" onSuccess={vi.fn()} />)
+
+    expect(screen.getByText('Sending a code to a@b.com')).toBeInTheDocument()
+    expect(await screen.findByText('Code sent to a@b.com')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Verification code')).not.toBeInTheDocument()
+
+    expect(await screen.findByLabelText('Verification code', {}, { timeout: 2000 })).toBeInTheDocument()
   })
 
   it('still advances to the code step when the OTP request fails, with an inline warning', async () => {
     postMock.mockRejectedValue(new Error('boom'))
     render(<VerifyAndSetPasswordForm email="a@b.com" onSuccess={vi.fn()} />)
 
-    expect(await screen.findByLabelText('Verification code')).toBeInTheDocument()
+    expect(await screen.findByLabelText('Verification code', {}, { timeout: 2000 })).toBeInTheDocument()
     expect(screen.getByRole('alert')).toHaveTextContent(
       "We couldn't send a code. You can still enter one below if you already have it.",
     )
@@ -57,7 +68,7 @@ describe('VerifyAndSetPasswordForm', () => {
 
     await userEvent.click(await screen.findByRole('button', { name: 'Retry' }))
 
-    expect(await screen.findByLabelText('Verification code')).toBeInTheDocument()
+    expect(await screen.findByLabelText('Verification code', {}, { timeout: 2000 })).toBeInTheDocument()
   })
 
   it('shows a rate-limited error inline on the code step when verify-otp is rate-limited (D-097)', async () => {
@@ -65,7 +76,7 @@ describe('VerifyAndSetPasswordForm', () => {
     postMock.mockRejectedValueOnce(new ApiClientError('RATE_LIMITED', 'Too many attempts — try again shortly'))
     render(<VerifyAndSetPasswordForm email="a@b.com" onSuccess={vi.fn()} />)
 
-    await userEvent.type(await screen.findByLabelText('Verification code'), '123456')
+    await userEvent.type(await screen.findByLabelText('Verification code', {}, { timeout: 2000 }), '123456')
     await userEvent.click(screen.getByRole('button', { name: 'Continue' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Too many attempts. Please try again shortly.')
@@ -77,7 +88,7 @@ describe('VerifyAndSetPasswordForm', () => {
     postMock.mockResolvedValueOnce({ verified: true })
     render(<VerifyAndSetPasswordForm email="a@b.com" onSuccess={vi.fn()} />)
 
-    await userEvent.type(await screen.findByLabelText('Verification code'), '123456')
+    await userEvent.type(await screen.findByLabelText('Verification code', {}, { timeout: 2000 }), '123456')
     postMock.mockClear()
     await userEvent.click(screen.getByRole('button', { name: 'Continue' }))
 
@@ -93,7 +104,7 @@ describe('VerifyAndSetPasswordForm', () => {
     postMock.mockRejectedValueOnce(new ApiClientError('BAD_REQUEST', 'Invalid or expired verification code'))
     render(<VerifyAndSetPasswordForm email="a@b.com" onSuccess={vi.fn()} />)
 
-    await userEvent.type(await screen.findByLabelText('Verification code'), '000000')
+    await userEvent.type(await screen.findByLabelText('Verification code', {}, { timeout: 2000 }), '000000')
     await userEvent.click(screen.getByRole('button', { name: 'Continue' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent('That code is incorrect or expired. Please check it and try again.')
@@ -105,9 +116,10 @@ describe('VerifyAndSetPasswordForm', () => {
     postMock.mockResolvedValue({ sent: true })
     render(<VerifyAndSetPasswordForm email="a@b.com" onSuccess={vi.fn()} />)
 
-    await userEvent.type(await screen.findByLabelText('Verification code'), '123456')
+    await userEvent.type(await screen.findByLabelText('Verification code', {}, { timeout: 2000 }), '123456')
     await userEvent.click(screen.getByRole('button', { name: 'Continue' }))
 
+    await screen.findByLabelText('Create a password')
     const submit = screen.getByRole('button', { name: 'Set password' })
     expect(submit).toBeDisabled()
     expect(screen.getByText('At least 8 characters')).toBeInTheDocument()
@@ -127,7 +139,7 @@ describe('VerifyAndSetPasswordForm', () => {
     postMock.mockResolvedValue({ sent: true })
     render(<VerifyAndSetPasswordForm email="a@b.com" onSuccess={vi.fn()} />)
 
-    await userEvent.type(await screen.findByLabelText('Verification code'), '123456')
+    await userEvent.type(await screen.findByLabelText('Verification code', {}, { timeout: 2000 }), '123456')
     await userEvent.click(screen.getByRole('button', { name: 'Continue' }))
     await userEvent.type(await screen.findByLabelText('Create a password'), 'Password123!')
     await userEvent.type(screen.getByLabelText('Confirm password'), 'Different123!')
@@ -146,7 +158,7 @@ describe('VerifyAndSetPasswordForm', () => {
 
     render(<VerifyAndSetPasswordForm email="a@b.com" onSuccess={onSuccess} />)
 
-    await userEvent.type(await screen.findByLabelText('Verification code'), '123456')
+    await userEvent.type(await screen.findByLabelText('Verification code', {}, { timeout: 2000 }), '123456')
     await userEvent.click(screen.getByRole('button', { name: 'Continue' }))
     await userEvent.type(await screen.findByLabelText('Create a password'), 'Password123!')
     await userEvent.type(screen.getByLabelText('Confirm password'), 'Password123!')
@@ -168,7 +180,7 @@ describe('VerifyAndSetPasswordForm', () => {
 
     render(<VerifyAndSetPasswordForm email="a@b.com" onSuccess={vi.fn()} />)
 
-    await userEvent.type(await screen.findByLabelText('Verification code'), '123456')
+    await userEvent.type(await screen.findByLabelText('Verification code', {}, { timeout: 2000 }), '123456')
     await userEvent.click(screen.getByRole('button', { name: 'Continue' }))
     await userEvent.type(await screen.findByLabelText('Create a password'), 'Password123!')
     await userEvent.type(screen.getByLabelText('Confirm password'), 'Password123!')
@@ -184,7 +196,7 @@ describe('VerifyAndSetPasswordForm', () => {
 
     render(<VerifyAndSetPasswordForm email="a@b.com" onSuccess={vi.fn()} />)
 
-    await userEvent.type(await screen.findByLabelText('Verification code'), '123456')
+    await userEvent.type(await screen.findByLabelText('Verification code', {}, { timeout: 2000 }), '123456')
     await userEvent.click(screen.getByRole('button', { name: 'Continue' }))
     await userEvent.type(await screen.findByLabelText('Create a password'), 'Password123!')
     await userEvent.type(screen.getByLabelText('Confirm password'), 'Password123!')
@@ -200,5 +212,58 @@ describe('VerifyAndSetPasswordForm', () => {
 
     await userEvent.click(await screen.findByRole('button', { name: 'Use a different email' }))
     expect(onBack).toHaveBeenCalledTimes(1)
+  })
+
+  it('ignores a rapid double-click on the code submit button (double-submit guard)', async () => {
+    postMock.mockResolvedValueOnce({ sent: true })
+    let resolveVerify: (value: { verified: boolean }) => void = () => {}
+    postMock.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveVerify = resolve
+      }),
+    )
+    render(<VerifyAndSetPasswordForm email="a@b.com" onSuccess={vi.fn()} />)
+
+    await userEvent.type(
+      await screen.findByLabelText('Verification code', {}, { timeout: 2000 }),
+      '123456',
+    )
+    postMock.mockClear()
+    const submit = screen.getByRole('button', { name: 'Continue' })
+    await userEvent.click(submit)
+    await userEvent.click(submit)
+
+    resolveVerify({ verified: true })
+    expect(await screen.findByLabelText('Create a password')).toBeInTheDocument()
+    expect(postMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('ignores a rapid double-click on the set-password submit button (double-submit guard)', async () => {
+    postMock.mockResolvedValueOnce({ sent: true })
+    postMock.mockResolvedValueOnce({ verified: true })
+    let resolveConfirm: (value: undefined) => void = () => {}
+    postMock.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveConfirm = resolve
+      }),
+    )
+    const onSuccess = vi.fn()
+    render(<VerifyAndSetPasswordForm email="a@b.com" onSuccess={onSuccess} />)
+
+    await userEvent.type(
+      await screen.findByLabelText('Verification code', {}, { timeout: 2000 }),
+      '123456',
+    )
+    await userEvent.click(screen.getByRole('button', { name: 'Continue' }))
+    await userEvent.type(await screen.findByLabelText('Create a password'), 'Password123!')
+    await userEvent.type(screen.getByLabelText('Confirm password'), 'Password123!')
+    postMock.mockClear()
+    const submit = screen.getByRole('button', { name: 'Set password' })
+    await userEvent.click(submit)
+    await userEvent.click(submit)
+
+    resolveConfirm(undefined)
+    await waitFor(() => expect(onSuccess).toHaveBeenCalledTimes(1))
+    expect(postMock).toHaveBeenCalledTimes(1)
   })
 })

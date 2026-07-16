@@ -9,6 +9,7 @@ import {
   IdentityProviderButton,
   Input,
   LoadingMark,
+  Logo,
   Modal,
   Select,
   Spinner,
@@ -39,6 +40,15 @@ export function DevUiGalleryPage() {
           <Button size="lg">
             <Bell className="size-5" /> Large
           </Button>
+        </div>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-h2">Logo</h2>
+        <div className="flex items-center gap-4">
+          <Logo size="sm" />
+          <Logo size="md" />
+          <Logo size="lg" />
         </div>
       </section>
 

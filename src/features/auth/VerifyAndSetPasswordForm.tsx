@@ -1,9 +1,13 @@
 import { useEffect, useState } from 'react'
-import type { FormEvent } from 'react'
+import type { FormEvent, ReactNode } from 'react'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { CheckCircle2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { isPasswordPolicyCompliant } from '@heediq/shared'
 import { Button, ErrorState, Input, LoadingMark, PasswordRequirements } from '../../components/ui'
 import { apiClient, ApiClientError } from '../../lib/api-client'
+import { fadeUpVariants, transition } from '../../lib/motion'
+import { useAsyncAction } from '../../lib/useAsyncAction'
 
 // Shared across all three D-089 entry points (reactive login-time linking, native signup,
 // proactive settings linking) — same backend calls, same two-step UI (code, then password;
@@ -13,7 +17,13 @@ import { apiClient, ApiClientError } from '../../lib/api-client'
 // 'rateLimited' is its own phase, not folded into 'code': D-097's app-level limiter means no
 // code was actually sent, so advancing to the code-entry screen would ask the user for
 // something that doesn't exist yet.
-type Phase = 'sendingCode' | 'code' | 'password' | 'rateLimited'
+//
+// 'sent' is a brief confirmation beat between 'sendingCode' and 'code' (min-display-time
+// pattern from 04-loading-and-feedback.md §10) so the send doesn't feel instantaneous/opaque —
+// the user sees the code was actually dispatched before being asked to enter it.
+type Phase = 'sendingCode' | 'sent' | 'code' | 'password' | 'rateLimited'
+
+const SENT_CONFIRMATION_MS = 500
 
 export interface VerifyAndSetPasswordFormProps {
   email: string
@@ -27,9 +37,9 @@ export function VerifyAndSetPasswordForm({ email, onSuccess, onBack }: VerifyAnd
   const [code, setCode] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [sendAttempt, setSendAttempt] = useState(0)
+  const reduceMotion = useReducedMotion()
 
   useEffect(() => {
     let cancelled = false
@@ -37,7 +47,7 @@ export function VerifyAndSetPasswordForm({ email, onSuccess, onBack }: VerifyAnd
       setPhase('sendingCode')
       try {
         await apiClient.post('/auth/link/request-otp', { email })
-        if (!cancelled) setPhase('code')
+        if (!cancelled) setPhase('sent')
       } catch (err: unknown) {
         if (cancelled) return
         if (err instanceof ApiClientError && err.code === 'RATE_LIMITED') {
@@ -55,13 +65,17 @@ export function VerifyAndSetPasswordForm({ email, onSuccess, onBack }: VerifyAnd
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [email, sendAttempt])
 
+  useEffect(() => {
+    if (phase !== 'sent') return
+    const timer = window.setTimeout(() => setPhase('code'), SENT_CONFIRMATION_MS)
+    return () => window.clearTimeout(timer)
+  }, [phase])
+
   // The code screen must not advance until the backend has actually verified it (D-089) —
   // /auth/link/verify-otp consumes the code via Cognito's ConfirmSignUp, independent of the
   // password, which is why /auth/link/confirm (called later) no longer takes a code at all.
-  async function handleCodeSubmit(e: FormEvent) {
-    e.preventDefault()
+  const codeAction = useAsyncAction(async () => {
     setError('')
-    setSubmitting(true)
     try {
       await apiClient.post('/auth/link/verify-otp', { email, code })
       setPhase('password')
@@ -73,21 +87,17 @@ export function VerifyAndSetPasswordForm({ email, onSuccess, onBack }: VerifyAnd
       } else {
         setError(t('errors.auth.generic'))
       }
-    } finally {
-      setSubmitting(false)
     }
-  }
+  })
 
   const passwordValid = isPasswordPolicyCompliant(newPassword)
 
-  async function handlePasswordSubmit(e: FormEvent) {
-    e.preventDefault()
+  const passwordAction = useAsyncAction(async () => {
     setError('')
     if (newPassword !== confirmPassword) {
       setError(t('auth.verify.passwordMismatch'))
       return
     }
-    setSubmitting(true)
     try {
       await apiClient.post('/auth/link/confirm', { email, newPassword })
       await onSuccess(newPassword)
@@ -101,33 +111,46 @@ export function VerifyAndSetPasswordForm({ email, onSuccess, onBack }: VerifyAnd
       } else {
         setError(t('errors.auth.generic'))
       }
-    } finally {
-      setSubmitting(false)
     }
+  })
+
+  function handleCodeSubmit(e: FormEvent) {
+    e.preventDefault()
+    void codeAction.run()
   }
 
+  function handlePasswordSubmit(e: FormEvent) {
+    e.preventDefault()
+    void passwordAction.run()
+  }
+
+  let content: ReactNode
+
   if (phase === 'sendingCode') {
-    return (
+    content = (
       <div className="flex flex-col items-center gap-3 py-6">
         <LoadingMark size="sm" aria-label={t('common.loading')} />
         <p className="text-caption text-text-secondary">{t('auth.verify.sendingCode', { email })}</p>
       </div>
     )
-  }
-
-  if (phase === 'rateLimited') {
-    return (
+  } else if (phase === 'sent') {
+    content = (
+      <div className="flex flex-col items-center gap-3 py-6">
+        <CheckCircle2 className="size-6 text-success" aria-hidden="true" />
+        <p className="text-caption text-text-secondary">{t('auth.verify.codeSent', { email })}</p>
+      </div>
+    )
+  } else if (phase === 'rateLimited') {
+    content = (
       <ErrorState
         title={t('auth.verify.rateLimited.title')}
         description={t('auth.verify.rateLimited.description')}
         onRetry={() => setSendAttempt((n) => n + 1)}
       />
     )
-  }
-
-  if (phase === 'code') {
-    return (
-      <form className="flex flex-col gap-4" onSubmit={(e) => void handleCodeSubmit(e)}>
+  } else if (phase === 'code') {
+    content = (
+      <form className="flex flex-col gap-4" onSubmit={handleCodeSubmit}>
         <p className="text-body text-text-secondary">{t('auth.verify.codeDescription', { email })}</p>
         <Input
           label={t('auth.verify.codeLabel')}
@@ -141,7 +164,7 @@ export function VerifyAndSetPasswordForm({ email, onSuccess, onBack }: VerifyAnd
             {error}
           </p>
         ) : null}
-        <Button type="submit" variant="primary" loading={submitting} disabled={!code}>
+        <Button type="submit" variant="primary" loading={codeAction.pending} disabled={!code}>
           {t('auth.verify.codeSubmit')}
         </Button>
         {onBack ? (
@@ -151,37 +174,52 @@ export function VerifyAndSetPasswordForm({ email, onSuccess, onBack }: VerifyAnd
         ) : null}
       </form>
     )
-  }
-
-  return (
-    <form className="flex flex-col gap-4" onSubmit={(e) => void handlePasswordSubmit(e)}>
-      <div className="flex flex-col gap-2">
+  } else {
+    content = (
+      <form className="flex flex-col gap-4" onSubmit={handlePasswordSubmit}>
+        <div className="flex flex-col gap-2">
+          <Input
+            label={t('auth.verify.newPasswordLabel')}
+            type="password"
+            autoComplete="new-password"
+            required
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+          />
+          <PasswordRequirements password={newPassword} />
+        </div>
         <Input
-          label={t('auth.verify.newPasswordLabel')}
+          label={t('auth.verify.confirmPasswordLabel')}
           type="password"
           autoComplete="new-password"
           required
-          value={newPassword}
-          onChange={(e) => setNewPassword(e.target.value)}
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
         />
-        <PasswordRequirements password={newPassword} />
-      </div>
-      <Input
-        label={t('auth.verify.confirmPasswordLabel')}
-        type="password"
-        autoComplete="new-password"
-        required
-        value={confirmPassword}
-        onChange={(e) => setConfirmPassword(e.target.value)}
-      />
-      {error ? (
-        <p role="alert" className="text-caption text-danger">
-          {error}
-        </p>
-      ) : null}
-      <Button type="submit" variant="primary" loading={submitting} disabled={!passwordValid}>
-        {t('auth.verify.passwordSubmit')}
-      </Button>
-    </form>
+        {error ? (
+          <p role="alert" className="text-caption text-danger">
+            {error}
+          </p>
+        ) : null}
+        <Button type="submit" variant="primary" loading={passwordAction.pending} disabled={!passwordValid}>
+          {t('auth.verify.passwordSubmit')}
+        </Button>
+      </form>
+    )
+  }
+
+  return (
+    <AnimatePresence mode="wait" initial={false}>
+      <motion.div
+        key={phase}
+        variants={reduceMotion ? undefined : fadeUpVariants}
+        initial="initial"
+        animate="animate"
+        exit="exit"
+        transition={transition}
+      >
+        {content}
+      </motion.div>
+    </AnimatePresence>
   )
 }
