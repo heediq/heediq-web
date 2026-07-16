@@ -71,6 +71,32 @@ describe('HomePage', () => {
     expect(screen.getByRole('button', { name: 'Continue with Microsoft' })).toBeInTheDocument()
   })
 
+  it('renders the brand mark next to the wordmark', async () => {
+    renderHome()
+    await waitFor(() => expect(screen.getByLabelText('Email')).toBeInTheDocument())
+    expect(screen.getByRole('img', { name: 'Heediq' })).toBeInTheDocument()
+  })
+
+  it('ignores a rapid double-click on the email submit button (double-submit guard)', async () => {
+    let resolveLookup: (value: { exists: boolean; passwordSet: boolean | null }) => void = () => {}
+    postMock.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveLookup = resolve
+      }),
+    )
+
+    renderHome()
+    await screen.findByLabelText('Email')
+    await userEvent.type(screen.getByLabelText('Email'), 'dup@heediq.com')
+    const submit = screen.getByRole('button', { name: 'Continue with email' })
+    await userEvent.click(submit)
+    await userEvent.click(submit)
+
+    resolveLookup({ exists: true, passwordSet: true })
+    await waitFor(() => expect(screen.getByLabelText('Password')).toBeInTheDocument())
+    expect(postMock).toHaveBeenCalledTimes(1)
+  })
+
   it('starts the Hosted UI login flow direct-to-provider from the Google button', async () => {
     renderHome()
     await screen.findByLabelText('Email')
