@@ -1,7 +1,9 @@
 import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { CheckCircle2, X, XCircle } from 'lucide-react'
 import { cn } from '../../../lib/cn'
+import { toastVariants, transition } from '../../../lib/motion'
 
 export interface ToastItem {
   id: string
@@ -58,37 +60,46 @@ export function useToast(): { success: (message: string) => void; error: (messag
 function Toaster() {
   const ctx = useContext(ToastContext)
   const { t } = useTranslation()
-  if (!ctx || ctx.toasts.length === 0) return null
+  const reduceMotion = useReducedMotion()
+  if (!ctx) return null
 
   return (
     <div className="fixed bottom-4 right-4 z-[60] flex flex-col gap-2">
-      {ctx.toasts.map((toast) => (
-        <div
-          key={toast.id}
-          role="alert"
-          className={cn(
-            'flex items-center gap-2 rounded-md border px-4 py-3 text-body shadow-lg',
-            toast.tone === 'success'
-              ? 'border-success-border bg-success-bg text-success'
-              : 'border-danger-border bg-danger-bg text-danger'
-          )}
-        >
-          {toast.tone === 'success' ? (
-            <CheckCircle2 className="size-4 shrink-0" aria-hidden="true" />
-          ) : (
-            <XCircle className="size-4 shrink-0" aria-hidden="true" />
-          )}
-          <span>{toast.message}</span>
-          <button
-            type="button"
-            aria-label={t('common.dismiss')}
-            onClick={() => ctx.dismissToast(toast.id)}
-            className="ml-2 text-text-secondary hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+      <AnimatePresence>
+        {ctx.toasts.map((toast) => (
+          <motion.div
+            key={toast.id}
+            role="alert"
+            layout={!reduceMotion}
+            variants={reduceMotion ? undefined : toastVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={transition}
+            className={cn(
+              'flex items-center gap-2 rounded-md border px-4 py-3 text-body shadow-lg',
+              toast.tone === 'success'
+                ? 'border-success-border bg-success-bg text-success'
+                : 'border-danger-border bg-danger-bg text-danger'
+            )}
           >
-            <X className="size-4" />
-          </button>
-        </div>
-      ))}
+            {toast.tone === 'success' ? (
+              <CheckCircle2 className="size-4 shrink-0" aria-hidden="true" />
+            ) : (
+              <XCircle className="size-4 shrink-0" aria-hidden="true" />
+            )}
+            <span>{toast.message}</span>
+            <button
+              type="button"
+              aria-label={t('common.dismiss')}
+              onClick={() => ctx.dismissToast(toast.id)}
+              className="ml-2 text-text-secondary hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            >
+              <X className="size-4" />
+            </button>
+          </motion.div>
+        ))}
+      </AnimatePresence>
     </div>
   )
 }
