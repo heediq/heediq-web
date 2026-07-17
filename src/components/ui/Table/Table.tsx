@@ -1,5 +1,8 @@
 import type { TdHTMLAttributes, ThHTMLAttributes, HTMLAttributes, ReactNode } from 'react'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import type { HTMLMotionProps } from 'framer-motion'
 import { cn } from '../../../lib/cn'
+import { fadeUpVariants, transition } from '../../../lib/motion'
 
 export interface TableProps extends HTMLAttributes<HTMLTableElement> {
   loading?: boolean
@@ -19,31 +22,49 @@ function TableRoot({
   children,
   ...props
 }: TableProps) {
+  const reduceMotion = useReducedMotion()
+
   return (
     <div className="overflow-x-auto rounded-md border border-border">
       <table className={cn('w-full border-collapse text-body', className)} {...props}>
         {children}
-        {loading ? (
-          <tbody>
-            {Array.from({ length: loadingRowCount }).map((_, rowIndex) => (
-              <TableRow key={rowIndex}>
-                {Array.from({ length: columnCount }).map((__, cellIndex) => (
-                  <TableCell key={cellIndex}>
-                    <div className="h-4 w-full animate-pulse rounded-sm bg-surface-2" />
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))}
-          </tbody>
-        ) : empty ? (
-          <tbody>
-            <tr>
-              <td colSpan={columnCount} className="px-4 py-8 text-center text-body text-text-secondary">
-                {emptyContent}
-              </td>
-            </tr>
-          </tbody>
-        ) : null}
+        <AnimatePresence mode="wait" initial={false}>
+          {loading ? (
+            <motion.tbody
+              key="loading"
+              variants={reduceMotion ? undefined : fadeUpVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={transition}
+            >
+              {Array.from({ length: loadingRowCount }).map((_, rowIndex) => (
+                <TableRow key={rowIndex}>
+                  {Array.from({ length: columnCount }).map((__, cellIndex) => (
+                    <TableCell key={cellIndex}>
+                      <div className="h-4 w-full animate-pulse rounded-sm bg-surface-2" />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))}
+            </motion.tbody>
+          ) : empty ? (
+            <motion.tbody
+              key="empty"
+              variants={reduceMotion ? undefined : fadeUpVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={transition}
+            >
+              <tr>
+                <td colSpan={columnCount} className="px-4 py-8 text-center text-body text-text-secondary">
+                  {emptyContent}
+                </td>
+              </tr>
+            </motion.tbody>
+          ) : null}
+        </AnimatePresence>
       </table>
     </div>
   )
@@ -65,8 +86,18 @@ function TableHeaderCell({ className, ...props }: ThHTMLAttributes<HTMLTableCell
   )
 }
 
-function TableBody({ className, ...props }: HTMLAttributes<HTMLTableSectionElement>) {
-  return <tbody className={cn(className)} {...props} />
+function TableBody({ className, ...props }: HTMLMotionProps<'tbody'>) {
+  const reduceMotion = useReducedMotion()
+  return (
+    <motion.tbody
+      variants={reduceMotion ? undefined : fadeUpVariants}
+      initial="initial"
+      animate="animate"
+      transition={transition}
+      className={cn(className)}
+      {...props}
+    />
+  )
 }
 
 function TableRow({ className, ...props }: HTMLAttributes<HTMLTableRowElement>) {
