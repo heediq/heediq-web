@@ -28,9 +28,10 @@ is always proven by Heediq's own emailed code (D-089/D-090), never inferred from
   Google/Microsoft `IdentityProviderButton`s on `HomePage`
   (`src/components/ui/IdentityProviderButton/README.md`); omitted, it falls back to the picker.
   Whenever a `provider` is set (both `startLogin` and `startProviderLink`), `prompt=select_account`
-  is also sent, forcing the IdP's own account chooser instead of silently reusing whatever Google/
-  Microsoft session the browser already has — otherwise a user with multiple accounts on the same
-  IdP has no way to pick a different one on a second login.
+  is also sent, intended to force the IdP's own account chooser instead of silently reusing whatever
+  session the browser already has. **Confirmed working for Microsoft only** — Cognito's built-in
+  social Google IdP silently drops `prompt` before redirecting to `accounts.google.com` (verified via
+  network tab; see Gotchas below). Left in the Google request anyway since it's a harmless no-op.
 - `pkce.ts` — PKCE verifier/challenge/state generation on Web Crypto, no external PKCE library.
 - `jwt.ts` — `decodeJwtPayload()`, a hand-written base64url JSON decode (no `jwt-decode` dependency,
   consistent with the "no new dependency" approach used throughout this module). Signature is never
@@ -125,6 +126,14 @@ so page-level tests only need to assert the handoff (email prop, `onSuccess`/`on
 re-test every phase per page. Run: `npx vitest run`.
 
 ## Gotchas & Constraints
+- **Google sign-in always reuses the browser's existing Google session — no account picker.**
+  Cognito's built-in social Google IdP does not forward the `prompt` query param to Google's own
+  `/oauth2/v2/auth` endpoint (confirmed by inspecting the actual redirect URL — no `prompt` param
+  present), even though it's sent on our `/oauth2/authorize` call. Cognito only forwards extra
+  authorize params for **custom OIDC** providers, which is how Microsoft is wired here — so the
+  picker likely does work there. Fixing this for Google would mean re-registering it as a custom
+  OIDC provider instead of Cognito's built-in social connector (`heediq-infra/lib/foundation/
+  cognito.ts`) — not attempted; accepted as a known platform limitation for now.
 - In any `useOAuthCallbackExchange` consumer, never render the error state from `!showLoading`
   alone — `showLoading` is also `false` during the pre-delay window before a still-pending exchange
   has been running long enough to show its spinner (D-122), not just after a failure hides it.
