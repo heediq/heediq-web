@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
@@ -109,6 +109,28 @@ describe('HomePage', () => {
     await screen.findByLabelText('Email')
     await userEvent.click(screen.getByRole('button', { name: 'Continue with Microsoft' }))
     expect(startLogin).toHaveBeenCalledWith('Microsoft')
+  })
+
+  it('resets a stuck Google-button loading state after a bfcache restore (cancelled OAuth redirect)', async () => {
+    renderHome()
+    await screen.findByLabelText('Email')
+    const googleButton = screen.getByRole('button', { name: 'Continue with Google' })
+    await userEvent.click(googleButton)
+    expect(googleButton).toBeDisabled()
+
+    act(() => {
+      window.dispatchEvent(new Event('pageshow', { bubbles: false, cancelable: false }))
+    })
+    // A same-load pageshow (not a bfcache restore) must not reset an in-flight click.
+    expect(googleButton).toBeDisabled()
+
+    const persistedPageShow = new Event('pageshow') as PageTransitionEvent
+    Object.defineProperty(persistedPageShow, 'persisted', { value: true })
+    act(() => {
+      window.dispatchEvent(persistedPageShow)
+    })
+
+    await waitFor(() => expect(googleButton).not.toBeDisabled())
   })
 
   it('redirects an already-authenticated user straight to /sources', async () => {

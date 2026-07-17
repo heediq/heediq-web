@@ -3,9 +3,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 vi.stubEnv('VITE_COGNITO_DOMAIN', 'https://heediq-test.auth.us-east-1.amazoncognito.com')
 vi.stubEnv('VITE_COGNITO_CLIENT_ID', 'test-client-id')
 
-const { startLogin, exchangeCodeForTokens, logoutUrl, OAuthCallbackError } = await import(
-  '../cognito-oauth'
-)
+const { startLogin, startProviderLink, exchangeCodeForTokens, logoutUrl, OAuthCallbackError } =
+  await import('../cognito-oauth')
 
 describe('cognito-oauth', () => {
   beforeEach(() => {
@@ -47,10 +46,11 @@ describe('cognito-oauth', () => {
       expect(sessionStorage.getItem('heediq.pkce.state')).toBeTruthy()
     })
 
-    it('omits identity_provider when no provider is given, landing on Cognito\'s own IdP picker', async () => {
+    it('omits identity_provider and prompt when no provider is given, landing on Cognito\'s own IdP picker', async () => {
       await startLogin()
       const url = new URL((window.location.assign as ReturnType<typeof vi.fn>).mock.calls[0][0])
       expect(url.searchParams.has('identity_provider')).toBe(false)
+      expect(url.searchParams.has('prompt')).toBe(false)
     })
 
     it('adds identity_provider=Google to go straight to Google, skipping the picker (D-118)', async () => {
@@ -63,6 +63,21 @@ describe('cognito-oauth', () => {
       await startLogin('Microsoft')
       const url = new URL((window.location.assign as ReturnType<typeof vi.fn>).mock.calls[0][0])
       expect(url.searchParams.get('identity_provider')).toBe('Microsoft')
+    })
+
+    it('adds prompt=select_account when a provider is given, forcing the IdP account chooser', async () => {
+      await startLogin('Google')
+      const url = new URL((window.location.assign as ReturnType<typeof vi.fn>).mock.calls[0][0])
+      expect(url.searchParams.get('prompt')).toBe('select_account')
+    })
+  })
+
+  describe('startProviderLink', () => {
+    it('always adds prompt=select_account, letting the user pick which account to link', async () => {
+      await startProviderLink('Google')
+      const url = new URL((window.location.assign as ReturnType<typeof vi.fn>).mock.calls[0][0])
+      expect(url.searchParams.get('identity_provider')).toBe('Google')
+      expect(url.searchParams.get('prompt')).toBe('select_account')
     })
   })
 

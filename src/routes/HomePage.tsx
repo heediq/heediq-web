@@ -4,13 +4,14 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import type { LookupEmailResponse } from '@heediq/shared'
-import { Button, IdentityProviderButton, Input, LoadingMark, Logo } from '../components/ui'
+import { Button, FullPageLoading, IdentityProviderButton, Input, Logo } from '../components/ui'
 import type { IdentityProvider } from '../components/ui'
 import { VerifyAndSetPasswordForm } from '../features/auth/VerifyAndSetPasswordForm'
 import { useAuth } from '../lib/auth/AuthContext'
 import { apiClient } from '../lib/api-client'
 import { fadeXVariants, transition } from '../lib/motion'
 import { useAsyncAction } from '../lib/useAsyncAction'
+import { usePerceivedLoading } from '../lib/usePerceivedLoading'
 import {
   CognitoIdpError,
   confirmForgotPassword,
@@ -48,10 +49,26 @@ export function HomePage() {
   const [error, setError] = useState('')
   const [ssoProvider, setSsoProvider] = useState<IdentityProvider | null>(null)
   const reduceMotion = useReducedMotion()
+  // See ProtectedRoute — same D-122 debounce so a fast initial session check never flashes this.
+  // `status === 'authenticated'` is handled separately below (instant, no debounce): it's a
+  // redirect-in-progress guard, not a genuine wait, and must never let the form flash underneath
+  // it while the navigate effect above is still pending.
+  const showSessionLoading = usePerceivedLoading(status === 'loading', { delay: 150, minDuration: 600 })
 
   useEffect(() => {
     if (status === 'authenticated') navigate('/sources', { replace: true })
   }, [status, navigate])
+
+  useEffect(() => {
+    // Cancelling on the IdP's account picker returns here via the browser's back-forward
+    // cache rather than a fresh page load, which would otherwise restore ssoProvider's
+    // stale loading/disabled state with no way to retry.
+    function handlePageShow(event: PageTransitionEvent) {
+      if (event.persisted) setSsoProvider(null)
+    }
+    window.addEventListener('pageshow', handlePageShow)
+    return () => window.removeEventListener('pageshow', handlePageShow)
+  }, [])
 
   function authErrorMessage(err: unknown): string {
     if (err instanceof CognitoIdpError) {
@@ -146,12 +163,8 @@ export function HomePage() {
     setError('')
   }
 
-  if (status === 'loading' || status === 'authenticated') {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <LoadingMark size="lg" aria-label={t('common.loading')} />
-      </div>
-    )
+  if (status === 'authenticated' || showSessionLoading) {
+    return <FullPageLoading aria-label={t('common.loading')} />
   }
 
   return (
