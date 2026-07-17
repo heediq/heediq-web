@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import type { CreateRoleAssignmentRequest, Group, Role, RoleAssignment, User } from '@heediq/shared'
 import { Button, ErrorState, LoadingMark, Modal, Select, useToast } from '../../components/ui'
 import { apiClient } from '../../lib/api-client'
+import { fadeUpVariants, transition } from '../../lib/motion'
 
 interface AssignmentsModalProps {
   open: boolean
@@ -26,6 +28,7 @@ export function AssignmentsModal({ open, onOpenChange, user, roles, groups }: As
   const toast = useToast()
   const queryClient = useQueryClient()
   const [selected, setSelected] = useState<string | undefined>(undefined)
+  const reduceMotion = useReducedMotion()
 
   const assignmentsQuery = useQuery({
     queryKey: ['roleAssignments', user?.userId],
@@ -68,6 +71,12 @@ export function AssignmentsModal({ open, onOpenChange, user, roles, groups }: As
     return groups.find((g) => g.groupId === assignment.groupId)?.name ?? assignment.groupId
   }
 
+  const assignmentsPhase = assignmentsQuery.isLoading
+    ? 'loading'
+    : assignmentsQuery.isError
+      ? 'error'
+      : 'content'
+
   function handleAssign() {
     if (!selected) return
     const [kind, id] = selected.split(':')
@@ -82,32 +91,44 @@ export function AssignmentsModal({ open, onOpenChange, user, roles, groups }: As
         <Modal.Title>{t('rolesSettings.users.modalTitle', { email: user?.email ?? '' })}</Modal.Title>
       </Modal.Header>
       <Modal.Body className="flex flex-col gap-4">
-        {assignmentsQuery.isLoading ? (
-          <div className="flex justify-center py-4">
-            <LoadingMark size="sm" aria-label={t('common.loading')} />
-          </div>
-        ) : assignmentsQuery.isError ? (
-          <ErrorState title={t('rolesSettings.users.loadAssignmentsError')} onRetry={() => void assignmentsQuery.refetch()} />
-        ) : assignmentsQuery.data && assignmentsQuery.data.roleAssignments.length > 0 ? (
-          <ul className="flex flex-col gap-2">
-            {assignmentsQuery.data.roleAssignments.map((assignment) => (
-              <li key={assignmentKey(assignment)} className="flex items-center justify-between">
-                <span className="text-body text-text-primary">{nameFor(assignment)}</span>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  loading={removeMutation.isPending && removeMutation.variables === assignment}
-                  onClick={() => removeMutation.mutate(assignment)}
-                >
-                  {t('common.delete')}
-                </Button>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-body text-text-secondary">{t('rolesSettings.users.noAssignments')}</p>
-        )}
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={assignmentsPhase}
+            layout={!reduceMotion}
+            variants={reduceMotion ? undefined : fadeUpVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={transition}
+          >
+            {assignmentsPhase === 'loading' ? (
+              <div className="flex justify-center py-4">
+                <LoadingMark size="sm" aria-label={t('common.loading')} />
+              </div>
+            ) : assignmentsPhase === 'error' ? (
+              <ErrorState title={t('rolesSettings.users.loadAssignmentsError')} onRetry={() => void assignmentsQuery.refetch()} />
+            ) : assignmentsQuery.data && assignmentsQuery.data.roleAssignments.length > 0 ? (
+              <ul className="flex flex-col gap-2">
+                {assignmentsQuery.data.roleAssignments.map((assignment) => (
+                  <li key={assignmentKey(assignment)} className="flex items-center justify-between">
+                    <span className="text-body text-text-primary">{nameFor(assignment)}</span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      loading={removeMutation.isPending && removeMutation.variables === assignment}
+                      onClick={() => removeMutation.mutate(assignment)}
+                    >
+                      {t('common.delete')}
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-body text-text-secondary">{t('rolesSettings.users.noAssignments')}</p>
+            )}
+          </motion.div>
+        </AnimatePresence>
 
         <div className="flex items-end gap-2">
           <div className="flex-1">
