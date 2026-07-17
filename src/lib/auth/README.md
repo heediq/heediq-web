@@ -50,6 +50,11 @@ is always proven by Heediq's own emailed code (D-089/D-090), never inferred from
   browser back/forward, duplicate navigation) short-circuits to the success path instead of
   replaying an already-consumed code (which always fails, since the code is single-use, even
   though the original attempt already succeeded server-side).
+- `useOAuthCallbackExchange.ts` (D-123) — the shared hook both `AuthCallbackPage` and
+  `SettingsLinkCallbackPage` build on: wraps `useOAuthCallbackGuard` + `usePerceivedLoading`
+  (D-122) around a caller-supplied one-time `run()`, returning `{ showLoading, failed }`. Extracted
+  after the two pages independently hand-copied the same loading/error branching and both carried
+  the identical race described below.
 
 ## Data Flow / How It Works
 **Normal login (D-089):** `HomePage` calls `apiClient.post('/auth/lookup-email')` to branch into
@@ -120,6 +125,12 @@ so page-level tests only need to assert the handoff (email prop, `onSuccess`/`on
 re-test every phase per page. Run: `npx vitest run`.
 
 ## Gotchas & Constraints
+- In any `useOAuthCallbackExchange` consumer, never render the error state from `!showLoading`
+  alone — `showLoading` is also `false` during the pre-delay window before a still-pending exchange
+  has been running long enough to show its spinner (D-122), not just after a failure hides it.
+  Gate the error render on the hook's `failed` flag; render `null` when neither is true. Getting
+  this backwards is exactly the bug D-123 was written to close (a real error-page flash right after
+  a successful Google sign-in).
 - Never call `applyTokens()` with the result of `exchangeLinkCodeForTokens()` — doing so would
   silently switch the active session to the linked-provider's federated identity instead of the
   original user.
