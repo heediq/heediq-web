@@ -1,12 +1,10 @@
-import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { ErrorState, FullPageLoading } from '../components/ui'
 import { exchangeLinkCodeForTokens } from '../lib/auth/cognito-oauth'
 import { apiClient } from '../lib/api-client'
 import { decodeJwtPayload } from '../lib/auth/jwt'
-import { useOAuthCallbackGuard } from '../lib/auth/useOAuthCallbackGuard'
-import { usePerceivedLoading } from '../lib/usePerceivedLoading'
+import { useOAuthCallbackExchange } from '../lib/auth/useOAuthCallbackExchange'
 
 interface CognitoIdentity {
   userId: string
@@ -20,24 +18,9 @@ interface LinkIdTokenPayload {
 export function SettingsLinkCallbackPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const [failed, setFailed] = useState(false)
-  const { isDuplicate } = useOAuthCallbackGuard()
-  // See ProtectedRoute (D-122) — keeps the loading screen up past a near-instant failure so the
-  // error state never flashes in underneath it.
-  const showLoading = usePerceivedLoading(!failed, { delay: 150, minDuration: 600 })
 
-  useEffect(() => {
-    let cancelled = false
-
-    if (isDuplicate) {
-      // This authorization code was already consumed by an earlier invocation of this exact
-      // callback (reload, browser back/forward) — the link already went through server-side;
-      // replaying it would only fail since the code is single-use (D-113).
-      navigate('/settings', { replace: true })
-      return
-    }
-
-    async function run() {
+  const { showLoading, failed } = useOAuthCallbackExchange({
+    run: async () => {
       const tokens = await exchangeLinkCodeForTokens(new URLSearchParams(window.location.search))
       const payload = decodeJwtPayload<LinkIdTokenPayload>(tokens.id_token)
       const identities: CognitoIdentity[] = payload.identities ? JSON.parse(payload.identities) : []
@@ -48,24 +31,16 @@ export function SettingsLinkCallbackPage() {
         provider: identity.providerName,
         providerUserId: identity.userId,
       })
-    }
-
-    run()
-      .then(() => {
-        if (!cancelled) navigate('/settings', { replace: true })
-      })
-      .catch(() => {
-        if (!cancelled) setFailed(true)
-      })
-
-    return () => {
-      cancelled = true
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDuplicate])
+    },
+    onDone: () => navigate('/settings', { replace: true }),
+  })
 
   if (showLoading) {
     return <FullPageLoading aria-label={t('settingsLinkCallback.linking')} />
+  }
+
+  if (!failed) {
+    return null
   }
 
   return (
