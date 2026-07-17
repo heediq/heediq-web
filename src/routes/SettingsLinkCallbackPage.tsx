@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { ErrorState, LoadingMark } from '../components/ui'
+import { ErrorState, FullPageLoading } from '../components/ui'
 import { exchangeLinkCodeForTokens } from '../lib/auth/cognito-oauth'
 import { apiClient } from '../lib/api-client'
 import { decodeJwtPayload } from '../lib/auth/jwt'
 import { useOAuthCallbackGuard } from '../lib/auth/useOAuthCallbackGuard'
+import { usePerceivedLoading } from '../lib/usePerceivedLoading'
 
 interface CognitoIdentity {
   userId: string
@@ -21,6 +22,9 @@ export function SettingsLinkCallbackPage() {
   const navigate = useNavigate()
   const [failed, setFailed] = useState(false)
   const { isDuplicate } = useOAuthCallbackGuard()
+  // See ProtectedRoute (D-122) — keeps the loading screen up past a near-instant failure so the
+  // error state never flashes in underneath it.
+  const showLoading = usePerceivedLoading(!failed, { delay: 150, minDuration: 600 })
 
   useEffect(() => {
     let cancelled = false
@@ -60,22 +64,18 @@ export function SettingsLinkCallbackPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDuplicate])
 
-  if (failed) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <ErrorState
-          title={t('settingsLinkCallback.error.title')}
-          description={t('settingsLinkCallback.error.description')}
-          retryLabel={t('settingsLinkCallback.error.retry')}
-          onRetry={() => navigate('/settings', { replace: true })}
-        />
-      </div>
-    )
+  if (showLoading) {
+    return <FullPageLoading aria-label={t('settingsLinkCallback.linking')} />
   }
 
   return (
     <div className="flex min-h-screen items-center justify-center">
-      <LoadingMark size="lg" aria-label={t('settingsLinkCallback.linking')} />
+      <ErrorState
+        title={t('settingsLinkCallback.error.title')}
+        description={t('settingsLinkCallback.error.description')}
+        retryLabel={t('settingsLinkCallback.error.retry')}
+        onRetry={() => navigate('/settings', { replace: true })}
+      />
     </div>
   )
 }

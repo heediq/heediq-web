@@ -27,6 +27,10 @@ is always proven by Heediq's own emailed code (D-089/D-090), never inferred from
   straight to that IdP and skipping Cognito's own generic picker (D-118) — used by the separate
   Google/Microsoft `IdentityProviderButton`s on `HomePage`
   (`src/components/ui/IdentityProviderButton/README.md`); omitted, it falls back to the picker.
+  Whenever a `provider` is set (both `startLogin` and `startProviderLink`), `prompt=select_account`
+  is also sent, forcing the IdP's own account chooser instead of silently reusing whatever Google/
+  Microsoft session the browser already has — otherwise a user with multiple accounts on the same
+  IdP has no way to pick a different one on a second login.
 - `pkce.ts` — PKCE verifier/challenge/state generation on Web Crypto, no external PKCE library.
 - `jwt.ts` — `decodeJwtPayload()`, a hand-written base64url JSON decode (no `jwt-decode` dependency,
   consistent with the "no new dependency" approach used throughout this module). Signature is never
@@ -36,7 +40,10 @@ is always proven by Heediq's own emailed code (D-089/D-090), never inferred from
   token, so a page reload doesn't force a full Hosted-UI redirect.
 - `AuthContext.tsx` — `useAuth()` hook exposing `status`/`login`/`logout`/`applyTokens`; the one
   place that writes to `token-store`.
-- `ProtectedRoute.tsx` — redirects to `/` when `status !== 'authenticated'`.
+- `ProtectedRoute.tsx` — redirects to `/` when `status !== 'authenticated'`. The `status === 'loading'`
+  wait is shown through `FullPageLoading` gated by `usePerceivedLoading` (`src/lib/usePerceivedLoading.ts`,
+  D-122): a session check that resolves in under 150ms never shows a loading screen at all, and one
+  that does show it stays up at least 600ms — see `src/components/ui/FullPageLoading/README.md`.
 - `useOAuthCallbackGuard.ts` (D-113) — marks an OAuth authorization `code` as consumed in
   `sessionStorage` synchronously on first render; both OAuth callback pages consult it before
   running their one-time exchange, so a duplicate invocation of the same callback URL (reload,
@@ -119,3 +126,8 @@ re-test every phase per page. Run: `npx vitest run`.
 - `decodeJwtPayload()` does not verify signatures — safe only because its output is used for display/
   derived values, never for an authorization decision (those all happen server-side on tokens Cognito
   itself validates).
+- If a user cancels the IdP's native account-picker UI, the browser returns to `HomePage` via the
+  back-forward cache (bfcache) rather than a fresh page load — the exact prior JS state (including a
+  disabled/loading SSO button) is restored with no natural reset. `HomePage` listens for `pageshow`
+  and resets `ssoProvider` whenever `event.persisted` is true, so the button becomes clickable again
+  instead of staying stuck.

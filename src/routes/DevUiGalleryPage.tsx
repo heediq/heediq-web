@@ -6,6 +6,7 @@ import {
   Card,
   Checkbox,
   ErrorState,
+  FullPageLoading,
   IdentityProviderButton,
   Input,
   LoadingMark,
@@ -87,6 +88,16 @@ export function DevUiGalleryPage() {
         <div className="flex flex-wrap items-center gap-8">
           <LoadingMark size="lg" tone="gradient" aria-label="Loading sources" />
           <LoadingMark size="sm" aria-label="Loading" />
+        </div>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-h2">FullPageLoading</h2>
+        <p className="text-caption text-text-secondary">
+          Always min-h-screen; clipped here to fit the gallery.
+        </p>
+        <div className="relative h-64 overflow-hidden rounded-md border border-border">
+          <FullPageLoading aria-label="Loading" />
         </div>
       </section>
 

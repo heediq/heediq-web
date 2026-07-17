@@ -39,7 +39,9 @@ export async function startLogin(provider?: LinkableProvider): Promise<void> {
     code_challenge: challenge,
     code_challenge_method: 'S256',
     state,
-    ...(provider ? { identity_provider: provider } : {}),
+    // Forces the IdP's own account chooser instead of silently reusing an existing browser
+    // session, so a user with multiple Google/Microsoft accounts can pick which one to use.
+    ...(provider ? { identity_provider: provider, prompt: 'select_account' } : {}),
   })
 
   window.location.assign(`${COGNITO_DOMAIN}/oauth2/authorize?${params.toString()}`)
@@ -68,6 +70,8 @@ export async function startProviderLink(provider: LinkableProvider): Promise<voi
     code_challenge_method: 'S256',
     state,
     identity_provider: provider,
+    // See startLogin — always let the user pick which account to link, never assume the cached one.
+    prompt: 'select_account',
   })
 
   window.location.assign(`${COGNITO_DOMAIN}/oauth2/authorize?${params.toString()}`)

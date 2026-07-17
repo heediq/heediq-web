@@ -69,10 +69,11 @@ describe('SettingsLinkCallbackPage', () => {
     expect(postMock).not.toHaveBeenCalled()
   })
 
-  it('shows a linking indicator while the exchange is pending', () => {
+  it('shows a linking indicator while the exchange is pending', async () => {
     exchangeLinkCodeForTokens.mockReturnValue(new Promise(() => {}))
     renderCallback()
-    expect(screen.getByRole('status')).toBeInTheDocument()
+    // Debounced (D-122) — only appears once past the 150ms delay.
+    await waitFor(() => expect(screen.getByRole('status')).toBeInTheDocument())
   })
 
   it('extracts the federated identity and posts it to link/add-provider, then returns to settings', async () => {

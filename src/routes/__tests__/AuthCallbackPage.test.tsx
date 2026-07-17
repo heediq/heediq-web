@@ -46,10 +46,12 @@ describe('AuthCallbackPage', () => {
     expect(exchangeCodeForTokens).not.toHaveBeenCalled()
   })
 
-  it('shows a signing-in indicator while the exchange is pending', () => {
+  it('shows a signing-in indicator while the exchange is pending', async () => {
     exchangeCodeForTokens.mockReturnValue(new Promise(() => {}))
     renderCallback('/auth/callback?code=abc&state=xyz')
-    expect(screen.getByRole('status')).toBeInTheDocument()
+    // The loading screen is debounced (D-122) — it only appears once the exchange has been
+    // in flight past the 150ms delay, so a fast exchange never flashes it.
+    await waitFor(() => expect(screen.getByRole('status')).toBeInTheDocument())
   })
 
   it('exchanges the code and redirects to /sources on success', async () => {
