@@ -39,8 +39,12 @@ export async function startLogin(provider?: LinkableProvider): Promise<void> {
     code_challenge: challenge,
     code_challenge_method: 'S256',
     state,
-    // Forces the IdP's own account chooser instead of silently reusing an existing browser
-    // session, so a user with multiple Google/Microsoft accounts can pick which one to use.
+    // Intended to force the IdP's own account chooser instead of silently reusing an existing
+    // browser session. Confirmed working for Microsoft (custom OIDC IdP, forwards extra
+    // authorize params) but NOT for Google: Cognito's built-in social Google IdP silently drops
+    // `prompt` before redirecting to accounts.google.com — verified via the network tab, the
+    // param never reaches Google. Left in place (harmless no-op for Google, and Cognito may add
+    // forwarding support later) rather than special-cased per provider.
     ...(provider ? { identity_provider: provider, prompt: 'select_account' } : {}),
   })
 
@@ -70,7 +74,7 @@ export async function startProviderLink(provider: LinkableProvider): Promise<voi
     code_challenge_method: 'S256',
     state,
     identity_provider: provider,
-    // See startLogin — always let the user pick which account to link, never assume the cached one.
+    // See startLogin — only actually effective for Microsoft; Cognito drops it for Google.
     prompt: 'select_account',
   })
 
