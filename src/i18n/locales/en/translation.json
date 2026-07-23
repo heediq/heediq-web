@@ -106,6 +106,7 @@
         "description": "Pick a context on the left to see its details."
       },
       "back": "Back to library",
+      "openChat": "Chat",
       "addSubContext": "Add sub-context",
       "createdLabel": "Created",
       "subContexts": "Sub-contexts",
@@ -159,6 +160,43 @@
     "dates": "Dates",
     "notes": "Notes",
     "keyPoints": "Key points"
+  },
+  "chat": {
+    "conversations": "Chats",
+    "newChat": "New chat",
+    "newChatTitle": "New chat",
+    "backToContext": "Back to context",
+    "backToConversations": "All chats",
+    "conversationsError": "Couldn’t load chats",
+    "createError": "Couldn’t start a new chat. Please try again.",
+    "noConversations": {
+      "title": "No chats yet",
+      "description": "Start a chat to ask questions or generate outputs from this context."
+    },
+    "selectConversation": {
+      "title": "Select a chat",
+      "description": "Pick a chat on the left, or start a new one."
+    },
+    "empty": {
+      "title": "Ask anything about this context",
+      "description": "Everything filed into this context is available to the assistant."
+    },
+    "composerPlaceholder": "Message the assistant…",
+    "send": "Send",
+    "stop": "Stop",
+    "thinking": "Assistant is thinking",
+    "copy": "Copy",
+    "copied": "Copied",
+    "retry": "Retry",
+    "jumpToLatest": "Jump to latest",
+    "sendError": "Couldn’t send your message. Please try again.",
+    "loadError": {
+      "title": "Couldn’t load this chat"
+    },
+    "turnFailed": {
+      "title": "The assistant couldn’t finish",
+      "description": "Something went wrong generating a reply."
+    }
   },
   "reviewWizard": {
     "title": "Review · {{title}}",

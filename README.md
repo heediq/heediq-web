@@ -19,6 +19,11 @@ installable, offline-capable (D-024).
   `ExtractedItem`s grouped by category, plus the Review entry point. See
   `src/features/sources/README.md`. Route component `src/routes/SourceDetailPage.tsx` (the first real
   `useWsEvent('classification_ready')` consumer — invalidates the source queries when ingest lands).
+- `src/features/chat/` — the Context chat panel (D-138/D-139/D-145, slice D): streaming chat over a
+  Context's memory, held to `04-loading-and-feedback.md` §6. **Lazy-loaded** (route
+  `/contexts/:contextId/chat`, `src/routes/ContextChatPage.tsx`) so its markdown/highlight deps
+  (`react-markdown`/`remark-gfm`/`rehype-highlight`) form a separate chunk, not the initial bundle.
+  See `src/features/chat/README.md`.
 - `src/routes/ReviewWizardPage.tsx` — the D-137 review wizard (`/sources/:sourceId/review`, slice C):
   step 1 confirm/adjust placement (accept the classifier's proposal, pick an existing Context, or
   create a new one via `CreateContextModal`), step 2 keep/discard `ExtractedItem`s, submit
@@ -161,8 +166,9 @@ installable, offline-capable (D-024).
   `heediq-infra` (S3 web-assets bucket + CloudFront distribution + SSM params the deploy pipeline
   reads, incl. `/heediq/api/cognito-hosted-ui-domain` and `/heediq/api/cognito-client-id`).
   `heediq-infra`'s WebSocket API (`WebSocketStack`) — connected to via `src/lib/ws/WsProvider.tsx`
-  (D-110; see `src/lib/ws/README.md`). First real consumer: `SourceDetailPage` subscribes to
-  `classification_ready` to refresh when ingest classification lands (chat events wire in at slice D).
+  (D-110; see `src/lib/ws/README.md`). Consumers: `SourceDetailPage` subscribes to
+  `classification_ready` (refresh when ingest classification lands); the chat panel's `useChatStream`
+  subscribes to `chat_delta`/`chat_complete`/`chat_failed` (D-139/D-145) to stream assistant turns.
   `@heediq/shared` `^0.15.3` (Context Library, ContextGrant, and chat contracts).
 - **Downstream**: none yet (this is the frontend leaf).
 - **Shared surfaces**: `@heediq/shared` version bumps; design tokens (`tokens.css`) if D-008 changes.
@@ -205,7 +211,9 @@ installable, offline-capable (D-024).
   `routes/__tests__/SourceDetailPage.test.tsx` (render / review-nav / 404-summary / empty / error).
 - Review wizard (slice C): `components/ui/Stepper/Stepper.test.tsx`;
   `routes/__tests__/ReviewWizardPage.test.tsx` (placement→items→file / uncheck-excludes / already-filed).
-- 57 test files / 248 tests total (`pnpm run test`).
+- Chat (slice D): `features/chat/__tests__/{useChatStream,ChatComposer,ChatThread}.test.tsx`
+  (stream assembly / composer keys / send→thinking→stream→refetch + failed-retry).
+- 60 test files / 260 tests total (`pnpm run test`).
 - No integration/E2E suites yet — add Playwright E2E once at least one real data screen exists
   behind auth.
 

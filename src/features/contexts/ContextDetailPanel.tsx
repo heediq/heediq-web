@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft, FolderPlus } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { ArrowLeft, FolderPlus, MessageSquare } from 'lucide-react'
 import { Badge, Button, EmptyState, ErrorState, Skeleton } from '../../components/ui'
 import { useContextDetail, type ContextTreeNode } from './contexts-api'
 
@@ -21,6 +22,7 @@ export function ContextDetailPanel({
   onBack,
 }: ContextDetailPanelProps) {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const query = useContextDetail(contextId)
 
   if (query.isPending) {
@@ -59,9 +61,14 @@ export function ContextDetailPanel({
         </Button>
         <div className="flex items-start justify-between gap-3">
           <h2 className="text-display text-text-primary">{context.name}</h2>
-          <Button size="sm" variant="secondary" onClick={() => onAddSubContext(context.contextId)}>
-            <FolderPlus className="size-4" /> {t('contextLibrary.detail.addSubContext')}
-          </Button>
+          <div className="flex shrink-0 items-center gap-2">
+            <Button size="sm" onClick={() => navigate(`/contexts/${context.contextId}/chat`)}>
+              <MessageSquare className="size-4" /> {t('contextLibrary.detail.openChat')}
+            </Button>
+            <Button size="sm" variant="secondary" onClick={() => onAddSubContext(context.contextId)}>
+              <FolderPlus className="size-4" /> {t('contextLibrary.detail.addSubContext')}
+            </Button>
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Badge tone="active">{t(`domains.${context.domain}`)}</Badge>
