@@ -66,10 +66,66 @@
     }
   },
   "nav": {
+    "contexts": "Contexts",
     "settings": "Settings",
     "roles": "Roles & Permissions",
     "auditLog": "Audit Log",
     "logout": "Log out"
+  },
+  "domains": {
+    "work": "Work",
+    "study": "Study",
+    "personal": "Personal",
+    "other": "Other"
+  },
+  "contextVisibility": {
+    "personal": "Personal",
+    "group": "Group",
+    "org": "Organization"
+  },
+  "contextStatus": {
+    "active": "Active",
+    "archived": "Archived"
+  },
+  "contextLibrary": {
+    "title": "Contexts",
+    "treeLabel": "Context library",
+    "newContext": "New context",
+    "loadError": {
+      "title": "Couldn’t load your contexts",
+      "description": "Something went wrong fetching the context library."
+    },
+    "empty": {
+      "title": "No contexts yet",
+      "description": "A context is where Heediq files everything it learns about a project or topic. Create your first one.",
+      "action": "Create context"
+    },
+    "detail": {
+      "none": {
+        "title": "Select a context",
+        "description": "Pick a context on the left to see its details."
+      },
+      "back": "Back to library",
+      "addSubContext": "Add sub-context",
+      "createdLabel": "Created",
+      "subContexts": "Sub-contexts",
+      "noSubContexts": "No sub-contexts yet.",
+      "loadError": {
+        "title": "Couldn’t load this context",
+        "description": "Something went wrong fetching this context."
+      }
+    },
+    "form": {
+      "createTitle": "New context",
+      "nameLabel": "Name",
+      "nameRequired": "Name is required",
+      "domainLabel": "Domain",
+      "descriptionLabel": "Description (optional)",
+      "parentLabel": "Parent context (optional)",
+      "parentNone": "None (top-level)",
+      "createSuccess": "Context created",
+      "createError": "Couldn’t create the context. Please try again."
+    }
   },
   "sourcesLibrary": {
     "comingSoon": "Sources library — coming next."

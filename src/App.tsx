@@ -13,6 +13,7 @@ import { HomePage } from './routes/HomePage'
 import { AuthCallbackPage } from './routes/AuthCallbackPage'
 import { SourcesLibraryPage } from './routes/SourcesLibraryPage'
 import { SourceDetailPage } from './routes/SourceDetailPage'
+import { ContextLibraryPage } from './routes/ContextLibraryPage'
 import { SettingsPage } from './routes/SettingsPage'
 import { SettingsLinkCallbackPage } from './routes/SettingsLinkCallbackPage'
 import { RolesSettingsPage } from './routes/RolesSettingsPage'
@@ -58,6 +59,30 @@ function AnimatedRoutes() {
             <ProtectedRoute>
               <AppShell>
                 <PageTransition><SourceDetailPage /></PageTransition>
+              </AppShell>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/contexts"
+          element={
+            <ProtectedRoute>
+              <AppShell>
+                <Can permission="context:read" fallback={<Navigate to="/sources" replace />}>
+                  <PageTransition><ContextLibraryPage /></PageTransition>
+                </Can>
+              </AppShell>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/contexts/:contextId"
+          element={
+            <ProtectedRoute>
+              <AppShell>
+                <Can permission="context:read" fallback={<Navigate to="/sources" replace />}>
+                  <PageTransition><ContextLibraryPage /></PageTransition>
+                </Can>
               </AppShell>
             </ProtectedRoute>
           }

@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { Button, Logo } from '../ui'
+import { Can } from '../../lib/rbac/Can'
 import { useAuth } from '../../lib/auth/AuthContext'
 
 export function TopBar() {
@@ -14,6 +15,11 @@ export function TopBar() {
         {t('home.title')}
       </Link>
       <nav className="flex items-center gap-2">
+        <Can permission="context:read">
+          <Button asChild variant="ghost" size="sm">
+            <Link to="/contexts">{t('nav.contexts')}</Link>
+          </Button>
+        </Can>
         <Button asChild variant="ghost" size="sm">
           <Link to="/settings">{t('nav.settings')}</Link>
         </Button>
