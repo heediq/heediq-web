@@ -20,6 +20,10 @@ vi.mock('../../lib/api-client', () => ({
   ApiClientError: MockApiClientError,
 }))
 
+// SourceDetailPage subscribes to classification_ready via useWsEvent, which needs a WsProvider —
+// out of scope for this unit test, so stub it to a no-op.
+vi.mock('../../lib/ws/useWsEvent', () => ({ useWsEvent: () => {} }))
+
 const source = {
   sourceId: 's1',
   orgId: 'o1',

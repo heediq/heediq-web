@@ -1,10 +1,13 @@
+import { useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, ListChecks } from 'lucide-react'
-import type { SourceStatus, SourceClassification } from '@heediq/shared'
+import type { SourceStatus, SourceClassification, WsEventPayloadMap } from '@heediq/shared'
 import { Badge, Button, EmptyState, ErrorState, Skeleton } from '../components/ui'
+import { useWsEvent } from '../lib/ws/useWsEvent'
 import { ExtractedItemsList } from '../features/sources/ExtractedItemsList'
-import { useSource, useSourceSummary, useSourceItems } from '../features/sources/sources-api'
+import { useSource, useSourceSummary, useSourceItems, sourceKeys } from '../features/sources/sources-api'
 
 const STATUS_TONE: Record<SourceStatus, 'neutral' | 'active' | 'success' | 'danger'> = {
   uploading: 'neutral',
@@ -23,9 +26,25 @@ export function SourceDetailPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
 
+  const queryClient = useQueryClient()
   const sourceQuery = useSource(sourceId)
   const summaryQuery = useSourceSummary(sourceId)
   const itemsQuery = useSourceItems(sourceId)
+
+  // Ingest classification lands async (D-111/D-133) — when it does for this source, refresh so the
+  // Review affordance + extracted items appear without a reload or polling.
+  useWsEvent(
+    'classification_ready',
+    useCallback(
+      (payload: WsEventPayloadMap['classification_ready']) => {
+        if (payload.sourceId !== sourceId) return
+        void queryClient.invalidateQueries({ queryKey: sourceKeys.detail(sourceId) })
+        void queryClient.invalidateQueries({ queryKey: sourceKeys.items(sourceId) })
+        void queryClient.invalidateQueries({ queryKey: sourceKeys.summary(sourceId) })
+      },
+      [queryClient, sourceId],
+    ),
+  )
 
   if (sourceQuery.isPending) {
     return (

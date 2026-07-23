@@ -17,7 +17,12 @@ installable, offline-capable (D-024).
   `src/features/contexts/README.md`. Route component `src/routes/ContextLibraryPage.tsx`.
 - `src/features/sources/` — Source detail read side: Summary (transcript + gist) + curated
   `ExtractedItem`s grouped by category, plus the Review entry point. See
-  `src/features/sources/README.md`. Route component `src/routes/SourceDetailPage.tsx`.
+  `src/features/sources/README.md`. Route component `src/routes/SourceDetailPage.tsx` (the first real
+  `useWsEvent('classification_ready')` consumer — invalidates the source queries when ingest lands).
+- `src/routes/ReviewWizardPage.tsx` — the D-137 review wizard (`/sources/:sourceId/review`, slice C):
+  step 1 confirm/adjust placement (accept the classifier's proposal, pick an existing Context, or
+  create a new one via `CreateContextModal`), step 2 keep/discard `ExtractedItem`s, submit
+  `POST /sources/:id/review`. Composes the `contexts` + `sources` features.
 - `src/main.tsx` — React root, imports `src/i18n/config` and `src/styles/globals.css`.
 - `src/i18n/config.ts` — initializes `react-i18next`/`i18next` synchronously with bundled resources
   (`initAsync: false`) so `t()` works both inside components (`useTranslation`) and in plain modules
@@ -59,9 +64,10 @@ installable, offline-capable (D-024).
   set-password component (D-089), reused by `HomePage` (reactive linking + native signup) and
   `SettingsPage` (proactive "add a sign-in method"). See `src/features/auth/README.md`.
 - `src/components/ui/` — the UI kit: `Button`, `Spinner`, `Card`, `Badge` (D-072), `LoadingMark`
-  (D-074/D-116), `ErrorState`, `EmptyState`, `Skeleton`, `Tree` (Context Library slice A — designed
+  (D-074/D-116), `ErrorState`, `EmptyState`, `Skeleton`, `Tree`, `Stepper` (Context Library — designed
   empty branch / layout-preserving loading placeholder / keyboard-operable ARIA tree for the
-  self-nesting Context hierarchy), `Input`, `Table`, `Modal`, `Checkbox`, `Select`, `Toast` (D-102 Phase 4 —
+  self-nesting Context hierarchy / multi-step indicator for the review wizard), `Input`, `Table`,
+  `Modal`, `Checkbox`, `Select`, `Toast` (D-102 Phase 4 —
   `Table`/`Modal`/`Checkbox`/`Select` are Radix-based primitives added for the Roles/Groups/Users
   screens; `Toast` is the centralized success/error outcome-feedback primitive, `04-loading-and-feedback.md`
   §7), `IdentityProviderButton` (D-118 — separate branded Google/Microsoft sign-in buttons that go
@@ -155,8 +161,8 @@ installable, offline-capable (D-024).
   `heediq-infra` (S3 web-assets bucket + CloudFront distribution + SSM params the deploy pipeline
   reads, incl. `/heediq/api/cognito-hosted-ui-domain` and `/heediq/api/cognito-client-id`).
   `heediq-infra`'s WebSocket API (`WebSocketStack`) — connected to via `src/lib/ws/WsProvider.tsx`
-  (D-110; see `src/lib/ws/README.md`). No feature consumes a pushed event yet (`SourcesLibraryPage`/
-  `SourceDetailPage` are still stubs, D-069 build order) but the client transport is live.
+  (D-110; see `src/lib/ws/README.md`). First real consumer: `SourceDetailPage` subscribes to
+  `classification_ready` to refresh when ingest classification lands (chat events wire in at slice D).
   `@heediq/shared` `^0.15.3` (Context Library, ContextGrant, and chat contracts).
 - **Downstream**: none yet (this is the frontend leaf).
 - **Shared surfaces**: `@heediq/shared` version bumps; design tokens (`tokens.css`) if D-008 changes.
@@ -197,7 +203,9 @@ installable, offline-capable (D-024).
   `routes/__tests__/ContextLibraryPage.test.tsx` (tree/empty/error/select-navigate/deep-link).
 - Source detail (slice B): `features/sources/__tests__/ExtractedItemsList.test.tsx`;
   `routes/__tests__/SourceDetailPage.test.tsx` (render / review-nav / 404-summary / empty / error).
-- 55 test files / 242 tests total (`pnpm run test`).
+- Review wizard (slice C): `components/ui/Stepper/Stepper.test.tsx`;
+  `routes/__tests__/ReviewWizardPage.test.tsx` (placement→items→file / uncheck-excludes / already-filed).
+- 57 test files / 248 tests total (`pnpm run test`).
 - No integration/E2E suites yet — add Playwright E2E once at least one real data screen exists
   behind auth.
 

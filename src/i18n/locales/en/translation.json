@@ -160,6 +160,44 @@
     "notes": "Notes",
     "keyPoints": "Key points"
   },
+  "reviewWizard": {
+    "title": "Review · {{title}}",
+    "progress": "Review progress",
+    "cancel": "Cancel",
+    "next": "Next",
+    "back": "Back",
+    "confirm": "File {{count}} items",
+    "success": "Source filed into context",
+    "error": "Couldn’t file this source. Please try again.",
+    "steps": {
+      "placement": "Placement",
+      "items": "Items"
+    },
+    "loadError": {
+      "title": "Couldn’t start the review",
+      "description": "Something went wrong loading this source."
+    },
+    "alreadyFiled": {
+      "title": "Already filed",
+      "description": "This source has already been reviewed and filed into a context.",
+      "action": "Back to source"
+    },
+    "placement": {
+      "intro": "Choose the context this source should be filed into.",
+      "suggestion": "Heediq suggests",
+      "suggestionExisting": "an existing context",
+      "contextLabel": "Context",
+      "contextPlaceholder": "Select a context",
+      "createNew": "Create new context"
+    },
+    "items": {
+      "intro": "Keep the items worth remembering; uncheck anything that shouldn’t become context memory.",
+      "empty": {
+        "title": "No extracted items",
+        "description": "There’s nothing to curate — filing will just place the source in the context."
+      }
+    }
+  },
   "sourceDetail": {
     "back": "Back to sources",
     "review": "Review",

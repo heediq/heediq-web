@@ -16,6 +16,7 @@ import {
   Select,
   Skeleton,
   Spinner,
+  Stepper,
   Table,
   Tree,
 } from '../components/ui'
@@ -244,6 +245,21 @@ export function DevUiGalleryPage() {
               </div>
             ))}
           </div>
+        </Card>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-h2">Stepper</h2>
+        <Card>
+          <Stepper
+            aria-label="Example progress"
+            current={1}
+            steps={[
+              { id: 'placement', label: 'Placement' },
+              { id: 'items', label: 'Items' },
+              { id: 'confirm', label: 'Confirm' },
+            ]}
+          />
         </Card>
       </section>
 

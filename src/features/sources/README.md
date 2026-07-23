@@ -20,7 +20,12 @@ feeds the review wizard (slice C).
 ## Data Flow
 - Route `/sources/:sourceId` (existing, `ProtectedRoute` + `AppShell`). Three independent queries so
   each section loads/fails on its own (summary and items never block the header).
-- The **Review** button routes to `/sources/:id/review` (slice C wires the wizard there).
+- The **Review** button routes to `/sources/:id/review` — the D-137 review wizard
+  (`src/routes/ReviewWizardPage.tsx`, slice C): placement (step 1) then keep/discard items (step 2),
+  submitting `POST /sources/:id/review`. It reuses `useSourceItems`/`groupByCategory` here and the
+  `contexts` feature's tree + `CreateContextModal`.
+- `SourceDetailPage` also subscribes to `useWsEvent('classification_ready')` and invalidates its
+  source/items/summary queries when ingest classification lands for this source (D-111/D-133).
 
 ## Contracts
 - `@heediq/shared`: `Source`, `Summary`, `ExtractedItem`, and the `SourceStatus`/

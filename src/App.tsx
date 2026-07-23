@@ -13,6 +13,7 @@ import { HomePage } from './routes/HomePage'
 import { AuthCallbackPage } from './routes/AuthCallbackPage'
 import { SourcesLibraryPage } from './routes/SourcesLibraryPage'
 import { SourceDetailPage } from './routes/SourceDetailPage'
+import { ReviewWizardPage } from './routes/ReviewWizardPage'
 import { ContextLibraryPage } from './routes/ContextLibraryPage'
 import { SettingsPage } from './routes/SettingsPage'
 import { SettingsLinkCallbackPage } from './routes/SettingsLinkCallbackPage'
@@ -59,6 +60,18 @@ function AnimatedRoutes() {
             <ProtectedRoute>
               <AppShell>
                 <PageTransition><SourceDetailPage /></PageTransition>
+              </AppShell>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/sources/:sourceId/review"
+          element={
+            <ProtectedRoute>
+              <AppShell>
+                <Can permission="context:read" fallback={<Navigate to="/sources" replace />}>
+                  <PageTransition><ReviewWizardPage /></PageTransition>
+                </Can>
               </AppShell>
             </ProtectedRoute>
           }

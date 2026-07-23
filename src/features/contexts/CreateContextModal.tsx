@@ -13,6 +13,10 @@ interface CreateContextModalProps {
   tree: ContextTreeNode[]
   /** Preselect a parent (e.g. "add sub-context" from a selected node). */
   defaultParentId?: string
+  /** Prefill the name (e.g. the classifier's proposed `newContextName` in the review wizard). */
+  defaultName?: string
+  /** Prefill the domain (e.g. the classifier's proposed domain). */
+  defaultDomain?: Domain
   /** Called with the created context so the caller can select it. */
   onCreated?: (context: Context) => void
 }
@@ -24,21 +28,23 @@ export function CreateContextModal({
   onOpenChange,
   tree,
   defaultParentId,
+  defaultName,
+  defaultDomain,
   onCreated,
 }: CreateContextModalProps) {
   const { t } = useTranslation()
   const toast = useToast()
   const queryClient = useQueryClient()
 
-  const [name, setName] = useState('')
-  const [domain, setDomain] = useState<Domain>('work')
+  const [name, setName] = useState(defaultName ?? '')
+  const [domain, setDomain] = useState<Domain>(defaultDomain ?? 'work')
   const [description, setDescription] = useState('')
   const [parentId, setParentId] = useState<string>(defaultParentId ?? NO_PARENT)
   const [nameError, setNameError] = useState<string | undefined>(undefined)
 
   function reset() {
-    setName('')
-    setDomain('work')
+    setName(defaultName ?? '')
+    setDomain(defaultDomain ?? 'work')
     setDescription('')
     setParentId(defaultParentId ?? NO_PARENT)
     setNameError(undefined)
