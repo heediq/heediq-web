@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@heediq/shared':
-        specifier: ^0.13.0
-        version: 0.13.0
+        specifier: ^0.15.3
+        version: 0.15.3
       '@radix-ui/react-checkbox':
         specifier: ^1.3.7
         version: 1.3.7(@types/react-dom@18.3.7(@types/react@18.3.31))(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -812,8 +812,8 @@ packages:
   '@floating-ui/utils@0.2.11':
     resolution: {integrity: sha512-RiB/yIh78pcIxl6lLMG0CgBXAZ2Y0eVHqMPYugu+9U0AeT6YBeiJpf7lbdJNIugFP5SIjwNRgo4DhR1Qxi26Gg==}
 
-  '@heediq/shared@0.13.0':
-    resolution: {integrity: sha512-peB5xygrX3sxec/DVqHihEU4c4PCaK+yWuQgi3dPFhkkLkJ1nfMGacTCiHGHscNPY0a1j/zS5Jn/NR6u9q+uCA==, tarball: https://npm.pkg.github.com/download/@heediq/shared/0.13.0/09c66e554e5c2a404a67507f6d314367011a3528}
+  '@heediq/shared@0.15.3':
+    resolution: {integrity: sha512-fH8fqZ2AzYMGW5us9bpSsiQWT/rE5K9wobEVg6MG9ggZHEm32q2GqkIIsmtaWoQWGdLoIMUKJPd9tWXMXaKypw==, tarball: https://npm.pkg.github.com/download/@heediq/shared/0.15.3/a55cd68e22be5f76da3867f3db155efed1b616d5}
     engines: {node: '>=22'}
 
   '@isaacs/cliui@9.0.0':
@@ -3873,7 +3873,7 @@ snapshots:
 
   '@floating-ui/utils@0.2.11': {}
 
-  '@heediq/shared@0.13.0':
+  '@heediq/shared@0.15.3':
     dependencies:
       zod: 3.25.76
 

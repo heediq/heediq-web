@@ -180,7 +180,12 @@
       "sources:delete": "Delete sources",
       "sources:enqueue-job": "Enqueue transcription jobs",
       "org:manage-roles": "Manage roles & permissions",
-      "audit:read": "Read audit log"
+      "audit:read": "Read audit log",
+      "context:read": "Read contexts",
+      "context:create": "Create contexts",
+      "context:update": "Update contexts",
+      "context:delete": "Delete contexts",
+      "context:share": "Share contexts across organizations"
     }
   },
   "auditLog": {
