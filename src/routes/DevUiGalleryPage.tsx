@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import { Bell, Mic } from 'lucide-react'
+import { Bell, Folder, FolderTree, Mic } from 'lucide-react'
 import {
   Badge,
   Button,
   Card,
   Checkbox,
+  EmptyState,
   ErrorState,
   FullPageLoading,
   IdentityProviderButton,
@@ -13,14 +14,17 @@ import {
   Logo,
   Modal,
   Select,
+  Skeleton,
   Spinner,
   Table,
+  Tree,
 } from '../components/ui'
 
 export function DevUiGalleryPage() {
   const [checked, setChecked] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
   const [role, setRole] = useState<string | undefined>(undefined)
+  const [treeSelected, setTreeSelected] = useState<string | undefined>('proj-a')
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-8 p-8">
@@ -212,6 +216,59 @@ export function DevUiGalleryPage() {
             </Table.Header>
           </Table>
         </div>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-h2">EmptyState</h2>
+        <Card>
+          <EmptyState
+            title="No contexts yet"
+            description="Create your first context to start filing sources into it."
+            icon={FolderTree}
+            action={<Button>Create context</Button>}
+          />
+        </Card>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-h2">Skeleton</h2>
+        <Card>
+          <div className="flex flex-col gap-3">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="flex items-center gap-3">
+                <Skeleton className="size-8 rounded-full" />
+                <div className="flex flex-1 flex-col gap-2">
+                  <Skeleton className="h-4 w-1/2" />
+                  <Skeleton className="h-3 w-1/3" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-h2">Tree</h2>
+        <Card>
+          <Tree
+            aria-label="Example context tree"
+            selectedId={treeSelected}
+            onSelect={setTreeSelected}
+            defaultExpandedIds={['work']}
+            nodes={[
+              {
+                id: 'work',
+                label: 'Work',
+                icon: FolderTree,
+                children: [
+                  { id: 'proj-a', label: 'Project Apollo', icon: Folder },
+                  { id: 'proj-b', label: 'Project Beacon', icon: Folder },
+                ],
+              },
+              { id: 'study', label: 'Study', icon: FolderTree },
+            ]}
+          />
+        </Card>
       </section>
     </div>
   )
