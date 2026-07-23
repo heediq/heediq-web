@@ -7,11 +7,14 @@ assembled from shared, tokenized components rather than bespoke styling per scre
 installable, offline-capable (D-024).
 
 ## Key Files
-- `src/App.tsx` — route table (`/`, `/auth/callback`, `/sources`, `/sources/:sourceId`, `/settings`,
-  `/settings/roles` (gated by `<Can permission="org:manage-roles">`, D-102 Phase 4),
+- `src/App.tsx` — route table (`/`, `/auth/callback`, `/sources`, `/sources/:sourceId`,
+  `/contexts` + `/contexts/:contextId` (Context Library, gated by `<Can permission="context:read">`),
+  `/settings`, `/settings/roles` (gated by `<Can permission="org:manage-roles">`, D-102 Phase 4),
   `/org/audit-log` (gated by `<Can permission="audit:read">`, D-102 Phase 5),
   `/settings/link-callback`, and `/dev/ui` gated behind `import.meta.env.DEV`) wrapped in
   `QueryClientProvider` + `BrowserRouter`.
+- `src/features/contexts/` — the Context Library UI (tree/library + detail + create). See
+  `src/features/contexts/README.md`. Route component `src/routes/ContextLibraryPage.tsx`.
 - `src/main.tsx` — React root, imports `src/i18n/config` and `src/styles/globals.css`.
 - `src/i18n/config.ts` — initializes `react-i18next`/`i18next` synchronously with bundled resources
   (`initAsync: false`) so `t()` works both inside components (`useTranslation`) and in plain modules
@@ -53,7 +56,9 @@ installable, offline-capable (D-024).
   set-password component (D-089), reused by `HomePage` (reactive linking + native signup) and
   `SettingsPage` (proactive "add a sign-in method"). See `src/features/auth/README.md`.
 - `src/components/ui/` — the UI kit: `Button`, `Spinner`, `Card`, `Badge` (D-072), `LoadingMark`
-  (D-074/D-116), `ErrorState`, `Input`, `Table`, `Modal`, `Checkbox`, `Select`, `Toast` (D-102 Phase 4 —
+  (D-074/D-116), `ErrorState`, `EmptyState`, `Skeleton`, `Tree` (Context Library slice A — designed
+  empty branch / layout-preserving loading placeholder / keyboard-operable ARIA tree for the
+  self-nesting Context hierarchy), `Input`, `Table`, `Modal`, `Checkbox`, `Select`, `Toast` (D-102 Phase 4 —
   `Table`/`Modal`/`Checkbox`/`Select` are Radix-based primitives added for the Roles/Groups/Users
   screens; `Toast` is the centralized success/error outcome-feedback primitive, `04-loading-and-feedback.md`
   §7), `IdentityProviderButton` (D-118 — separate branded Google/Microsoft sign-in buttons that go
@@ -148,7 +153,7 @@ installable, offline-capable (D-024).
   `heediq-infra`'s WebSocket API (`WebSocketStack`) — connected to via `src/lib/ws/WsProvider.tsx`
   (D-110; see `src/lib/ws/README.md`). No feature consumes a pushed event yet (`SourcesLibraryPage`/
   `SourceDetailPage` are still stubs, D-069 build order) but the client transport is live.
-  `@heediq/shared` `^0.13.0`.
+  `@heediq/shared` `^0.15.3` (Context Library, ContextGrant, and chat contracts).
 - **Downstream**: none yet (this is the frontend leaf).
 - **Shared surfaces**: `@heediq/shared` version bumps; design tokens (`tokens.css`) if D-008 changes.
 
@@ -183,7 +188,10 @@ installable, offline-capable (D-024).
   (connect/reconnect/backoff/dispatch, against a hand-rolled `FakeWebSocket`).
 - `src/lib/pwa/__tests__/useInstallPrompt.test.ts` — dispatches synthetic `beforeinstallprompt`/
   `appinstalled` events; see `src/lib/pwa/README.md`.
-- 44 test files / 190 tests total (`pnpm run test`).
+- Context Library (slice A): `components/ui/{Tree,EmptyState,Skeleton}` kit tests;
+  `features/contexts/__tests__/CreateContextModal.test.tsx`;
+  `routes/__tests__/ContextLibraryPage.test.tsx` (tree/empty/error/select-navigate/deep-link).
+- 53 test files / 234 tests total (`pnpm run test`).
 - No integration/E2E suites yet — add Playwright E2E once at least one real data screen exists
   behind auth.
 
