@@ -130,8 +130,56 @@
   "sourcesLibrary": {
     "comingSoon": "Sources library — coming next."
   },
+  "sourceStatus": {
+    "uploading": "Uploading",
+    "processing": "Processing",
+    "ready": "Ready",
+    "failed": "Failed"
+  },
+  "sourceClassification": {
+    "pending_review": "Needs review",
+    "approved": "Filed"
+  },
+  "extractedItemStatus": {
+    "proposed": "Proposed",
+    "kept": "Kept",
+    "discarded": "Discarded"
+  },
+  "extractionCategories": {
+    "requirements": "Requirements",
+    "decisions": "Decisions",
+    "openQuestions": "Open questions",
+    "actionItems": "Action items",
+    "keyConcepts": "Key concepts",
+    "definitions": "Definitions",
+    "questions": "Questions",
+    "references": "References",
+    "items": "Items",
+    "amounts": "Amounts",
+    "dates": "Dates",
+    "notes": "Notes",
+    "keyPoints": "Key points"
+  },
   "sourceDetail": {
-    "comingSoon": "Source detail ({{sourceId}}) — coming next."
+    "back": "Back to sources",
+    "review": "Review",
+    "gist": "Summary",
+    "gistUnavailable": "No summary yet — it appears once processing finishes.",
+    "extractedItems": "Extracted items",
+    "transcript": "Transcript",
+    "transcriptUnavailable": "No transcript yet — it appears once processing finishes.",
+    "confidence": "{{percent}}% confidence",
+    "loadError": {
+      "title": "Couldn’t load this source",
+      "description": "Something went wrong fetching this source."
+    },
+    "itemsError": {
+      "title": "Couldn’t load extracted items"
+    },
+    "noItems": {
+      "title": "No extracted items",
+      "description": "Heediq didn’t pull any structured items from this source."
+    }
   },
   "authCallback": {
     "signingIn": "Signing you in",

@@ -15,6 +15,9 @@ installable, offline-capable (D-024).
   `QueryClientProvider` + `BrowserRouter`.
 - `src/features/contexts/` — the Context Library UI (tree/library + detail + create). See
   `src/features/contexts/README.md`. Route component `src/routes/ContextLibraryPage.tsx`.
+- `src/features/sources/` — Source detail read side: Summary (transcript + gist) + curated
+  `ExtractedItem`s grouped by category, plus the Review entry point. See
+  `src/features/sources/README.md`. Route component `src/routes/SourceDetailPage.tsx`.
 - `src/main.tsx` — React root, imports `src/i18n/config` and `src/styles/globals.css`.
 - `src/i18n/config.ts` — initializes `react-i18next`/`i18next` synchronously with bundled resources
   (`initAsync: false`) so `t()` works both inside components (`useTranslation`) and in plain modules
@@ -89,8 +92,9 @@ installable, offline-capable (D-024).
 - `src/routes/` — screen-level route components. `HomePage` (unified email-first sign-in/sign-up +
   cross-provider linking entry point, D-078/D-087), `AuthCallbackPage` (PKCE code exchange,
   loading/error branches), `SettingsPage`/`SettingsLinkCallbackPage` (proactive provider linking,
-  D-083) are wired up. `SourcesLibraryPage`/`SourceDetailPage` are still placeholders behind
-  `ProtectedRoute`, pending the library/detail build-out.
+  D-083) are wired up. `SourceDetailPage` is built (Context Library slice B — Summary + curated
+  ExtractedItems, `src/features/sources/`); `SourcesLibraryPage` (the sources *list*) is still a
+  placeholder behind `ProtectedRoute`.
 - `src/routes/DevUiGalleryPage.tsx` — living component gallery (`03-ui-kit.md` §8), only mounted
   in dev builds.
 - `src/lib/pwa/` — `useInstallPrompt()`, capturing the browser's `beforeinstallprompt` event so the
@@ -191,7 +195,9 @@ installable, offline-capable (D-024).
 - Context Library (slice A): `components/ui/{Tree,EmptyState,Skeleton}` kit tests;
   `features/contexts/__tests__/CreateContextModal.test.tsx`;
   `routes/__tests__/ContextLibraryPage.test.tsx` (tree/empty/error/select-navigate/deep-link).
-- 53 test files / 234 tests total (`pnpm run test`).
+- Source detail (slice B): `features/sources/__tests__/ExtractedItemsList.test.tsx`;
+  `routes/__tests__/SourceDetailPage.test.tsx` (render / review-nav / 404-summary / empty / error).
+- 55 test files / 242 tests total (`pnpm run test`).
 - No integration/E2E suites yet — add Playwright E2E once at least one real data screen exists
   behind auth.
 
