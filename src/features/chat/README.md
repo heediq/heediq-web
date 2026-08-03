@@ -9,7 +9,12 @@ deps stay out of the initial bundle.
 ## Key Files
 - `chat-api.ts` — TanStack Query hooks: `useConversations`/`useCreateConversation` (contextId-scoped),
   `useMessages`/`usePostMessage` (conversationId-scoped). Posting a message persists the user turn and
-  enqueues the assistant job server-side; the reply arrives over WS.
+  enqueues the assistant job server-side; the reply arrives over WS. `usePostMessage` takes an optional
+  `bypassLedgerGating` (D-149) — omitted from the body unless set.
+- `LedgerGateBanner.tsx` — inline banner shown above the composer when a send is blocked by unsettled
+  decisions (D-149 `LEDGER_GATED` 409). Reuses the ledger's `LedgerEntryRow` (read live from
+  `useLedger`, not the stale error payload) so blockers can be filled in place; once all clear it
+  auto-retries the send, and **Send anyway** resends with `bypassLedgerGating`.
 - `useChatStream.ts` — assembles a streaming assistant turn from `chat_delta`/`chat_complete`/
   `chat_failed` (D-139/D-145) for one conversation. `begin()` shows the thinking indicator the instant
   the user sends. Rendering dedupes on `messageId` so the streamed text stays until the refetched
@@ -35,13 +40,17 @@ deps stay out of the initial bundle.
 
 ## Contracts
 - `@heediq/shared`: `Conversation`, `ChatMessage`, `CreateConversationRequest`/`CreateMessageRequest`,
-  and the `chat_delta`/`chat_complete`/`chat_failed` WS payloads (`WsEventPayloadMap`).
-- Backend: `GET/POST /conversations?contextId=`, `GET/POST /conversations/:id/messages`.
+  the `chat_delta`/`chat_complete`/`chat_failed` WS payloads (`WsEventPayloadMap`), and the ledger-gate
+  contracts `LEDGER_GATED_ERROR_CODE` + `LedgerGatedDetailsSchema` (`{ blockingEntries[] }`, D-149).
+- Backend: `GET/POST /conversations?contextId=`, `GET/POST /conversations/:id/messages`. The POST returns
+  a `LEDGER_GATED` 409 (details = blocking entries) unless `bypassLedgerGating` is set.
 
 ## Testing
 - `useChatStream.test.tsx` (delta assembly / complete / cross-conversation ignore / failed / stop),
   `ChatComposer.test.tsx` (enter / shift-enter / empty / stop / in-flight), `ChatThread.test.tsx`
-  (send→thinking→stream→refetch, failed+retry). WS mocked by capturing the `useWsEvent` handlers.
+  (send→thinking→stream→refetch, failed+retry, LEDGER_GATED→banner→send-anyway),
+  `LedgerGateBanner.test.tsx` (lists blockers / send-anyway / fill→auto-resolve / no premature resolve).
+  WS mocked by capturing the `useWsEvent` handlers.
 
 ## Gotchas & limitations (backend follow-ups)
 - **`stop()` is client-side only** — it halts token application, but the worker keeps generating and
@@ -50,3 +59,6 @@ deps stay out of the initial bundle.
 - **Retry re-posts the last user message** as a new turn (no regenerate endpoint), so it adds a user
   message rather than regenerating in place. A no-duplicate regenerate is a backend follow-up.
 - **New chats are created with a default title** ("New chat") — no rename/auto-title endpoint yet.
+- **The ledger gate is enforced server-side (D-149).** The banner and its inline fills are UX; the real
+  block is the API's `LEDGER_GATED` 409, and "Send anyway" just replays the POST with
+  `bypassLedgerGating` (reusing the `context:update` permission the fills already need).

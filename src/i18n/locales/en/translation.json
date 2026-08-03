@@ -196,6 +196,11 @@
     "turnFailed": {
       "title": "The assistant couldn’t finish",
       "description": "Something went wrong generating a reply."
+    },
+    "gate": {
+      "title": "This context has unsettled decisions",
+      "intro": "Answer the open decisions below so the assistant can rely on them, or send anyway.",
+      "sendAnyway": "Send anyway"
     }
   },
   "ledger": {

@@ -2,20 +2,28 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useQueryClient } from '@tanstack/react-query'
 import { ArrowDown, RotateCcw } from 'lucide-react'
+import {
+  LEDGER_GATED_ERROR_CODE,
+  LedgerGatedDetailsSchema,
+  type LedgerGatedDetails,
+} from '@heediq/shared'
 import { Button, EmptyState, ErrorState, Skeleton, useToast } from '../../components/ui'
+import { ApiClientError } from '../../lib/api-client'
 import { ChatMessage } from './ChatMessage'
 import { ChatComposer } from './ChatComposer'
+import { LedgerGateBanner } from './LedgerGateBanner'
 import { ThinkingIndicator } from './ThinkingIndicator'
 import { chatKeys, useMessages, usePostMessage } from './chat-api'
 import { useChatStream } from './useChatStream'
 
 interface ChatThreadProps {
   conversationId: string
+  contextId: string
 }
 
 const BOTTOM_THRESHOLD = 80
 
-export function ChatThread({ conversationId }: ChatThreadProps) {
+export function ChatThread({ conversationId, contextId }: ChatThreadProps) {
   const { t } = useTranslation()
   const toast = useToast()
   const queryClient = useQueryClient()
@@ -29,6 +37,9 @@ export function ChatThread({ conversationId }: ChatThreadProps) {
   const stream = useChatStream(conversationId, refetchMessages)
 
   const [optimisticUser, setOptimisticUser] = useState<string | null>(null)
+  // The send blocked by unsettled decisions (D-149), if any, plus the text to resend once resolved.
+  const [gate, setGate] = useState<LedgerGatedDetails | null>(null)
+  const pendingText = useRef<string | null>(null)
   // User-message count at send time — the optimistic bubble clears only once the refetched history
   // actually gains a user message (not merely because a refetch happened), so it never flickers away
   // before the server reflects it.
@@ -66,18 +77,31 @@ export function ChatThread({ conversationId }: ChatThreadProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages.length, pending?.text, pending?.status, optimisticUser, atBottom])
 
-  function send(text: string) {
+  function send(text: string, opts?: { bypass?: boolean }) {
+    pendingText.current = text
+    setGate(null)
     sentUserBaseline.current = messages.filter((m) => m.role === 'user').length
     setOptimisticUser(text)
     stream.begin()
     setAtBottom(true)
-    postMutation.mutate(text, {
-      onError: () => {
-        toast.error(t('chat.sendError'))
-        stream.reset()
-        setOptimisticUser(null)
+    postMutation.mutate(
+      { content: text, bypassLedgerGating: opts?.bypass },
+      {
+        onError: (err) => {
+          stream.reset()
+          setOptimisticUser(null)
+          // Unsettled decisions block the send (D-149) — surface the inline gate instead of a toast.
+          if (err instanceof ApiClientError && err.code === LEDGER_GATED_ERROR_CODE) {
+            const parsed = LedgerGatedDetailsSchema.safeParse(err.details)
+            if (parsed.success) {
+              setGate(parsed.data)
+              return
+            }
+          }
+          toast.error(t('chat.sendError'))
+        },
       },
-    })
+    )
   }
 
   function retry() {
@@ -164,6 +188,22 @@ export function ChatThread({ conversationId }: ChatThreadProps) {
 
       <div className="border-t border-border p-3">
         <div className="mx-auto w-full max-w-3xl">
+          {gate ? (
+            <LedgerGateBanner
+              contextId={contextId}
+              blockingEntries={gate.blockingEntries}
+              onAllResolved={() => {
+                const text = pendingText.current
+                setGate(null)
+                if (text) send(text)
+              }}
+              onSendAnyway={() => {
+                const text = pendingText.current
+                if (text) send(text, { bypass: true })
+              }}
+              onDismiss={() => setGate(null)}
+            />
+          ) : null}
           <ChatComposer
             onSend={send}
             onStop={stream.stop}

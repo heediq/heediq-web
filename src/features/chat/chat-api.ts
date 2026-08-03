@@ -35,8 +35,13 @@ export function useMessages(conversationId: string | undefined) {
 export function usePostMessage(conversationId: string) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (content: string) =>
-      apiClient.post<{ message: ChatMessage }>(`/conversations/${conversationId}/messages`, { content }),
+    // `bypassLedgerGating` skips the D-149 unsettled-decisions gate for this one send; omitted from the
+    // body unless set so the default request stays unchanged.
+    mutationFn: ({ content, bypassLedgerGating }: { content: string; bypassLedgerGating?: boolean }) =>
+      apiClient.post<{ message: ChatMessage }>(`/conversations/${conversationId}/messages`, {
+        content,
+        ...(bypassLedgerGating ? { bypassLedgerGating: true } : {}),
+      }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: chatKeys.messages(conversationId) }),
   })
 }
