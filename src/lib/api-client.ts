@@ -4,10 +4,14 @@ import { i18n } from '../i18n/config'
  * own ErrorCode (heediq-api/src/lib/errors.ts), e.g. "WEAK_PASSWORD", not a Cognito exception name. */
 export class ApiClientError extends Error {
   code: string
+  /** The backend error envelope's `error.details`, when present — e.g. LEDGER_GATED's
+   * `{ blockingEntries }` (D-149). Untyped here; callers narrow with the relevant Zod schema. */
+  details?: unknown
 
-  constructor(code: string, message: string) {
+  constructor(code: string, message: string, details?: unknown) {
     super(message)
     this.code = code
+    this.details = details
   }
 }
 
@@ -43,7 +47,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
   if (!res.ok || !body?.ok) {
     if (body?.error?.code) {
-      throw new ApiClientError(body.error.code, body.error.message)
+      throw new ApiClientError(body.error.code, body.error.message, body.error.details)
     }
     throw new Error(i18n.t('errors.requestFailed', { status: res.status }))
   }
