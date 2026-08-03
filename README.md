@@ -71,7 +71,8 @@ installable, offline-capable (D-024).
 - `src/components/ui/` — the UI kit: `Button`, `Spinner`, `Card`, `Badge` (D-072), `LoadingMark`
   (D-074/D-116), `ErrorState`, `EmptyState`, `Skeleton`, `Tree`, `Stepper` (Context Library — designed
   empty branch / layout-preserving loading placeholder / keyboard-operable ARIA tree for the
-  self-nesting Context hierarchy / multi-step indicator for the review wizard), `Input`, `Table`,
+  self-nesting Context hierarchy / multi-step indicator for the review wizard), `Input`,
+  `PasswordRequirements` (D-094 — live password-policy checklist for the set-password flow), `Table`,
   `Modal`, `Checkbox`, `Select`, `Toast` (D-102 Phase 4 —
   `Table`/`Modal`/`Checkbox`/`Select` are Radix-based primitives added for the Roles/Groups/Users
   screens; `Toast` is the centralized success/error outcome-feedback primitive, `04-loading-and-feedback.md`
@@ -80,6 +81,8 @@ installable, offline-capable (D-024).
   button routing through Cognito's own generic IdP picker). Each has its own `README.md`
   (props/variants/states/usage) per `03-ui-kit.md` §9. `Modal` and `Toast` animate mount/unmount via
   the shared motion system (`src/lib/motion.ts`, D-117).
+- `src/components/layout/` — app-shell layout primitives: `AppShell` + `TopBar`, mounted inside
+  `ProtectedRoute` to frame authenticated screens. See `src/components/layout/README.md`.
 - `src/lib/rbac/` — `usePermissions` (TanStack Query hook over `GET /me`'s `effectivePermissions`)
   and `<Can permission="...">` (UX-only conditional render; the real authorization boundary is
   always server-side, D-102/D-105). See `src/lib/rbac/README.md`.
@@ -178,9 +181,11 @@ installable, offline-capable (D-024).
 - `pnpm run test:pre-pr` = typecheck + test — the pre-PR gate (`05-testing.md`).
 - Component tests cover all declared states (default/hover/focus/disabled/loading/error) per kit
   component: `Button.test.tsx`, `Spinner.test.tsx`, `Card.test.tsx`, `Badge.test.tsx`,
-  `LoadingMark.test.tsx`, `ErrorState.test.tsx`, `Input.test.tsx`, `Table.test.tsx`, `Modal.test.tsx`
-  (via composition in component tests), `Checkbox.test.tsx`, `Select.test.tsx`, `Toast.test.tsx`,
-  `IdentityProviderButton.test.tsx`. `Toast.test.tsx` mocks `framer-motion` to a plain passthrough,
+  `LoadingMark.test.tsx`, `ErrorState.test.tsx`, `Input.test.tsx`, `PasswordRequirements.test.tsx`,
+  `Table.test.tsx`, `Modal.test.tsx` (via composition in component tests), `Checkbox.test.tsx`,
+  `Select.test.tsx`, `Toast.test.tsx`, `IdentityProviderButton.test.tsx`, plus the layout components'
+  tests in `src/components/layout/__tests__/` (`AppShell.test.tsx`, `TopBar.test.tsx`).
+  `Toast.test.tsx` mocks `framer-motion` to a plain passthrough,
   since fake timers don't deterministically resolve a real rAF-driven exit transition — the
   dismiss/auto-dismiss assertions test toast state, not animation timing.
 - RBAC tests (D-102 Phase 4): `lib/rbac/__tests__/usePermissions.test.tsx`, `Can.test.tsx`;
