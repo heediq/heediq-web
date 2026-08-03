@@ -17,6 +17,11 @@ step 3 (D-137) and the chat gating banner (D-149) also consume.
   `<Can permission="context:update">` (UX-only; the server is the real gate).
 - `LedgerStatusBadge.tsx` — status → `Badge` tone: `confirmed`→success, `needs_review`→amber `active`
   (no dedicated warning token, D-072), `open`→neutral.
+- `LedgerReconcileStep.tsx` — the review wizard's step 3 (D-137). After a source is filed, the ledger
+  worker reconciles asynchronously (D-148) and pushes `ledger_ready`; this waits inline with a visible
+  progress state (filtered to this `contextId`+`sourceId`), then surfaces the `open`/`needs_review`
+  entries as `LedgerEntryRow`s to fill on the spot. Filling is optional; a 90s timeout offers to
+  reconcile later from the standing view.
 
 ## Data flow
 `LedgerSection` → `useLedger(contextId)` → `GET /contexts/:id/ledger` → `{ entries }`. A row's save
