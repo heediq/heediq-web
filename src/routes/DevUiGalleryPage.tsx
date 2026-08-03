@@ -3,6 +3,7 @@ import { Bell, Folder, FolderTree, Mic } from 'lucide-react'
 import {
   Badge,
   Button,
+  Callout,
   Card,
   Checkbox,
   EmptyState,
@@ -123,6 +124,21 @@ export function DevUiGalleryPage() {
           description="Something went wrong exchanging your login. Try again."
           onRetry={() => {}}
         />
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-h2">Callout</h2>
+        <div className="flex flex-col gap-3">
+          <Callout tone="warning" title="This context has unsettled decisions">
+            Fill the open entries below, or send anyway.
+          </Callout>
+          <Callout tone="info" title="Reconciling decisions…">
+            We&apos;re rolling up decisions from this source.
+          </Callout>
+          <Callout tone="danger" title="Reconciliation failed">
+            The ledger couldn&apos;t be built. Retry from the source.
+          </Callout>
+        </div>
       </section>
 
       <section className="flex flex-col gap-3">

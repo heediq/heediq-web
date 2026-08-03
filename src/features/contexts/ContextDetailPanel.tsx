@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, FolderPlus, MessageSquare } from 'lucide-react'
 import { Badge, Button, EmptyState, ErrorState, Skeleton } from '../../components/ui'
+import { LedgerSection } from '../ledger/LedgerSection'
 import { useContextDetail, type ContextTreeNode } from './contexts-api'
 
 interface ContextDetailPanelProps {
@@ -112,6 +113,8 @@ export function ContextDetailPanel({
           <EmptyState title={t('contextLibrary.detail.noSubContexts')} />
         )}
       </div>
+
+      <LedgerSection contextId={context.contextId} />
     </div>
   )
 }

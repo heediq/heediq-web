@@ -198,6 +198,38 @@
       "description": "Something went wrong generating a reply."
     }
   },
+  "ledger": {
+    "heading": "Decision Ledger",
+    "addEntry": "Add entry",
+    "createEntry": "Add to ledger",
+    "topicLabel": "Topic",
+    "topicPlaceholder": "e.g. Which auth provider do we use?",
+    "answerLabel": "Answer",
+    "answerPlaceholder": "The decision or answer",
+    "answer": "Answer",
+    "deleteEntry": "Delete entry",
+    "noAnswer": "Open — needs an answer",
+    "confirmDelete": "Delete this entry?",
+    "added": "Entry added",
+    "addError": "Couldn't add the entry. Try again.",
+    "saved": "Answer saved",
+    "saveError": "Couldn't save the answer. Try again.",
+    "deleted": "Entry deleted",
+    "deleteError": "Couldn't delete the entry. Try again.",
+    "status": {
+      "confirmed": "Confirmed",
+      "needs_review": "Needs review",
+      "open": "Open"
+    },
+    "empty": {
+      "title": "No ledger entries yet",
+      "description": "Decisions and open questions roll up here as you file sources into this context."
+    },
+    "loadError": {
+      "title": "Couldn't load the ledger",
+      "description": "Something went wrong fetching this context's decisions."
+    }
+  },
   "reviewWizard": {
     "title": "Review · {{title}}",
     "progress": "Review progress",

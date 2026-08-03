@@ -16,7 +16,9 @@ the review wizard, and the chat panel land alongside it.
   `personal` (the request omits `visibility`, defaulting server-side) — visibility/group management
   is deferred (see workspace `BACKLOG.md`, cross-org sharing UI).
 - `ContextDetailPanel.tsx` — selected Context's metadata (name, `domain`/`visibility` badges,
-  description, created date) + its sub-context list (from the tree node). Own loading/error branches.
+  description, created date) + its sub-context list (from the tree node) + the Context's **Decision
+  Ledger** (embeds `../ledger/LedgerSection`, D-136/D-148 — see `../ledger/README.md`). Own
+  loading/error branches; the ledger section owns its own.
 - `../../routes/ContextLibraryPage.tsx` — composes the above into a responsive split view; owns
   URL-driven selection.
 
