@@ -16,6 +16,9 @@ vi.mock('../../lib/api-client', () => ({
   ApiClientError: class extends Error {},
 }))
 
+// Step 3 (LedgerReconcileStep) subscribes to `ledger_ready` via useWsEvent, which needs a WsProvider.
+vi.mock('../../lib/ws/useWsEvent', () => ({ useWsEvent: () => {} }))
+
 const source = {
   sourceId: 's1',
   orgId: 'o1',
@@ -93,7 +96,8 @@ describe('ReviewWizardPage', () => {
     await waitFor(() =>
       expect(postMock).toHaveBeenCalledWith('/sources/s1/review', { contextId: 'ctx-1', kept: ['i1', 'i2'] }),
     )
-    await waitFor(() => expect(screen.getByText('source detail')).toBeInTheDocument())
+    // Filing advances to reconciliation (step 3) rather than leaving the wizard.
+    await waitFor(() => expect(screen.getByText('Reconciling decisions…')).toBeInTheDocument())
   })
 
   it('excludes unchecked items from the kept set', async () => {

@@ -7,6 +7,7 @@ import type { Context, ReviewApprovalRequest } from '@heediq/shared'
 import { Badge, Button, Checkbox, EmptyState, ErrorState, Select, Skeleton, Stepper, useToast } from '../components/ui'
 import { apiClient } from '../lib/api-client'
 import { CreateContextModal } from '../features/contexts/CreateContextModal'
+import { LedgerReconcileStep } from '../features/ledger/LedgerReconcileStep'
 import { useContextTree, flattenContexts } from '../features/contexts/contexts-api'
 import { useSource, useSourceItems, groupByCategory } from '../features/sources/sources-api'
 
@@ -42,7 +43,8 @@ export function ReviewWizardPage() {
       await queryClient.invalidateQueries({ queryKey: ['sources'] })
       await queryClient.invalidateQueries({ queryKey: ['contexts'] })
       toast.success(t('reviewWizard.success'))
-      navigate(`/sources/${sourceId}`)
+      // Stay in the wizard and advance to reconciliation (D-137 step 3) instead of leaving.
+      setStep(2)
     },
     onError: () => toast.error(t('reviewWizard.error')),
   })
@@ -76,8 +78,9 @@ export function ReviewWizardPage() {
   const items = itemsQuery.data.items
   const tree = treeQuery.data.tree
 
-  // Already filed — nothing to review.
-  if (source.classification === 'approved') {
+  // Already filed — nothing to review. Only bail at the entry step: once we've filed and advanced to
+  // reconciliation (step 2), the source flips to `approved` but we must stay in the wizard.
+  if (source.classification === 'approved' && step === 0) {
     return (
       <div className="mx-auto w-full max-w-2xl p-6">
         <EmptyState
@@ -112,6 +115,7 @@ export function ReviewWizardPage() {
   const steps = [
     { id: 'placement', label: t('reviewWizard.steps.placement') },
     { id: 'items', label: t('reviewWizard.steps.items') },
+    { id: 'ledger', label: t('reviewWizard.steps.ledger') },
   ]
 
   return (
@@ -124,7 +128,7 @@ export function ReviewWizardPage() {
         <Stepper aria-label={t('reviewWizard.progress')} steps={steps} current={step} />
       </div>
 
-      {step === 0 ? (
+      {step === 0 && (
         <div className="flex flex-col gap-4">
           <p className="text-body text-text-secondary">{t('reviewWizard.placement.intro')}</p>
 
@@ -161,7 +165,9 @@ export function ReviewWizardPage() {
             </Button>
           </div>
         </div>
-      ) : (
+      )}
+
+      {step === 1 && (
         <div className="flex flex-col gap-4">
           <p className="text-body text-text-secondary">{t('reviewWizard.items.intro')}</p>
 
@@ -202,6 +208,14 @@ export function ReviewWizardPage() {
             </Button>
           </div>
         </div>
+      )}
+
+      {step === 2 && contextId && (
+        <LedgerReconcileStep
+          contextId={contextId}
+          sourceId={sourceId}
+          onFinish={() => navigate(`/sources/${sourceId}`)}
+        />
       )}
 
       <CreateContextModal

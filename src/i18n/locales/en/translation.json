@@ -241,7 +241,24 @@
     "error": "Couldn’t file this source. Please try again.",
     "steps": {
       "placement": "Placement",
-      "items": "Items"
+      "items": "Items",
+      "ledger": "Decisions"
+    },
+    "reconcile": {
+      "heading": "Reconciling decisions…",
+      "description": "We’re rolling up the key decisions and open questions from this source into the ledger. This can take a moment.",
+      "finishLater": "Finish later",
+      "ready": {
+        "title": "These decisions need your input",
+        "intro": "Fill in what you can now, or come back to the context’s ledger later.",
+        "allSettled": "All decisions are settled",
+        "allSettledDescription": "Nothing needs your input — this source’s decisions rolled up cleanly.",
+        "done": "Done"
+      },
+      "timeout": {
+        "title": "Still reconciling",
+        "description": "This is taking longer than expected. Keep waiting, or review the ledger later from the context."
+      }
     },
     "loadError": {
       "title": "Couldn’t start the review",
