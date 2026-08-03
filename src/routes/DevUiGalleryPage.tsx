@@ -232,6 +232,24 @@ export function DevUiGalleryPage() {
               </Table.Row>
             </Table.Header>
           </Table>
+          <Table columnCount={2}>
+            <Table.Header>
+              <Table.Row>
+                <Table.HeaderCell>Name</Table.HeaderCell>
+                <Table.HeaderCell>Role</Table.HeaderCell>
+              </Table.Row>
+            </Table.Header>
+            <Table.Body>
+              <Table.Row interactive role="button" tabIndex={0}>
+                <Table.Cell>Ada Lovelace (interactive row)</Table.Cell>
+                <Table.Cell>Admin</Table.Cell>
+              </Table.Row>
+              <Table.Row interactive role="button" tabIndex={0}>
+                <Table.Cell>Alan Turing (interactive row)</Table.Cell>
+                <Table.Cell>Member</Table.Cell>
+              </Table.Row>
+            </Table.Body>
+          </Table>
         </div>
       </section>
 

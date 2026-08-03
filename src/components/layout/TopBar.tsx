@@ -15,6 +15,9 @@ export function TopBar() {
         {t('home.title')}
       </Link>
       <nav className="flex items-center gap-2">
+        <Button asChild variant="ghost" size="sm">
+          <Link to="/sources">{t('nav.sources')}</Link>
+        </Button>
         <Can permission="context:read">
           <Button asChild variant="ghost" size="sm">
             <Link to="/contexts">{t('nav.contexts')}</Link>

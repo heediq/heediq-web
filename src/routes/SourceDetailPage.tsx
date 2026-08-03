@@ -3,18 +3,11 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, ListChecks } from 'lucide-react'
-import type { SourceStatus, SourceClassification, WsEventPayloadMap } from '@heediq/shared'
+import type { SourceClassification, WsEventPayloadMap } from '@heediq/shared'
 import { Badge, Button, EmptyState, ErrorState, Skeleton } from '../components/ui'
 import { useWsEvent } from '../lib/ws/useWsEvent'
 import { ExtractedItemsList } from '../features/sources/ExtractedItemsList'
-import { useSource, useSourceSummary, useSourceItems, sourceKeys } from '../features/sources/sources-api'
-
-const STATUS_TONE: Record<SourceStatus, 'neutral' | 'active' | 'success' | 'danger'> = {
-  uploading: 'neutral',
-  processing: 'active',
-  ready: 'success',
-  failed: 'danger',
-}
+import { useSource, useSourceSummary, useSourceItems, sourceKeys, SOURCE_STATUS_TONE } from '../features/sources/sources-api'
 
 const CLASSIFICATION_TONE: Record<SourceClassification, 'active' | 'success'> = {
   pending_review: 'active',
@@ -86,7 +79,7 @@ export function SourceDetailPage() {
           ) : null}
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Badge tone={STATUS_TONE[source.status]}>{t(`sourceStatus.${source.status}`)}</Badge>
+          <Badge tone={SOURCE_STATUS_TONE[source.status]}>{t(`sourceStatus.${source.status}`)}</Badge>
           {source.classification ? (
             <Badge tone={CLASSIFICATION_TONE[source.classification]}>
               {t(`sourceClassification.${source.classification}`)}

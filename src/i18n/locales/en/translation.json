@@ -66,6 +66,7 @@
     }
   },
   "nav": {
+    "sources": "Sources",
     "contexts": "Contexts",
     "settings": "Settings",
     "roles": "Roles & Permissions",
@@ -129,7 +130,21 @@
     }
   },
   "sourcesLibrary": {
-    "comingSoon": "Sources library — coming next."
+    "title": "Sources",
+    "tableLabel": "Your sources",
+    "columnTitle": "Title",
+    "columnStatus": "Status",
+    "columnCreated": "Created",
+    "openSource": "Open {{title}}",
+    "loadMore": "Load more",
+    "empty": {
+      "title": "No sources yet",
+      "description": "Anything you capture — a recording, an audio file, or a text file — shows up here."
+    },
+    "loadError": {
+      "title": "Couldn’t load your sources",
+      "description": "Something went wrong fetching your sources. Please try again."
+    }
   },
   "sourceStatus": {
     "uploading": "Uploading",

@@ -1,11 +1,45 @@
-import { useQuery } from '@tanstack/react-query'
-import type { ExtractedItem, Source, Summary } from '@heediq/shared'
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
+import type { ExtractedItem, Source, SourceStatus, Summary } from '@heediq/shared'
 import { apiClient, ApiClientError } from '../../lib/api-client'
 
+/** Badge tone per Source status — one mapping shared by the library list and the detail header. */
+export const SOURCE_STATUS_TONE: Record<SourceStatus, 'neutral' | 'active' | 'success' | 'danger'> = {
+  uploading: 'neutral',
+  processing: 'active',
+  ready: 'success',
+  failed: 'danger',
+}
+
 export const sourceKeys = {
+  /** The Context Library list (all loaded pages share this single key so a WS-driven
+   * invalidation refetches every loaded page, keeping status badges live across the whole list). */
+  list: () => ['sources', 'list'] as const,
   detail: (id: string) => ['sources', 'detail', id] as const,
   summary: (id: string) => ['sources', 'summary', id] as const,
   items: (id: string) => ['sources', 'items', id] as const,
+}
+
+interface SourcesListPage {
+  sources: Source[]
+  nextCursor: string | null
+}
+
+/**
+ * The org's Sources, newest-first, cursor-paginated (GET /sources). An infinite query rather than a
+ * per-cursor `useQuery`: it keeps all loaded pages under one cache entry, so `invalidateQueries`
+ * after a `job_status`/`classification_ready` WS event refetches every page at once and status
+ * badges update live no matter which page a Source is on.
+ */
+export function useSourcesList() {
+  return useInfiniteQuery({
+    queryKey: sourceKeys.list(),
+    queryFn: ({ pageParam }) =>
+      apiClient.get<SourcesListPage>(
+        pageParam ? `/sources?cursor=${encodeURIComponent(pageParam)}` : '/sources',
+      ),
+    initialPageParam: null as string | null,
+    getNextPageParam: (last) => last.nextCursor,
+  })
 }
 
 export function useSource(id: string) {

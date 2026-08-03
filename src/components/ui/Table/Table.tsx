@@ -100,10 +100,22 @@ function TableBody({ className, ...props }: HTMLMotionProps<'tbody'>) {
   )
 }
 
-function TableRow({ className, ...props }: HTMLAttributes<HTMLTableRowElement>) {
+export interface TableRowProps extends HTMLAttributes<HTMLTableRowElement> {
+  /** Row behaves as a control (whole-row click/keyboard nav) — adds pointer affordance + a
+   * focus-visible ring so keyboard users can see the focused row. The caller still supplies the
+   * `onClick`/`role`/`tabIndex`/`onKeyDown` behavior; this is the visual layer of that pattern. */
+  interactive?: boolean
+}
+
+function TableRow({ className, interactive, ...props }: TableRowProps) {
   return (
     <tr
-      className={cn('border-t border-border transition-colors hover:bg-surface-2/50', className)}
+      className={cn(
+        'border-t border-border transition-colors hover:bg-surface-2/50',
+        interactive &&
+          'cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset',
+        className,
+      )}
       {...props}
     />
   )
