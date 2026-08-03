@@ -7,6 +7,10 @@ Composable table primitive with built-in loading (skeleton rows) and empty state
 ## Key Files
 - `Table.tsx` — `Table` (root, takes `loading`/`loadingRowCount`/`columnCount`/`empty`/`emptyContent`),
   `Table.Header`, `Table.HeaderCell`, `Table.Body`, `Table.Row`, `Table.Cell`.
+- `Table.Row` takes `interactive` — turns the row into a clickable control: pointer cursor + a
+  `focus-visible` ring. It only styles; the consumer still supplies `role="button"`, `tabIndex={0}`,
+  `onClick`, and an `onKeyDown` (Enter/Space) plus an `aria-label` (the Context Library list is the
+  first consumer). Keeps row-as-link styling in the kit rather than hand-rolled in feature code.
 
 ## States
 default row hover · loading (skeleton rows replace `Table.Body`, count via `loadingRowCount`,
