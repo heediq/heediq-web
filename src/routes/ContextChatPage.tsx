@@ -72,7 +72,7 @@ export function ContextChatPage() {
               >
                 <ArrowLeft className="size-4" /> {t('chat.backToConversations')}
               </button>
-              <ChatThread key={selectedId} conversationId={selectedId} />
+              <ChatThread key={selectedId} conversationId={selectedId} contextId={contextId} />
             </>
           ) : (
             <div className="hidden h-full items-center justify-center md:flex">

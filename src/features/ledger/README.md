@@ -3,8 +3,9 @@
 ## Purpose
 The Decision Ledger UI for a Context (D-136/D-148/D-149) — a curated, deduplicated roll-up of key
 decisions and open questions. This module owns the **standing** per-Context ledger view (embedded in
-the context detail panel) plus the shared data hooks and row/badge components that the review wizard's
-step 3 (D-137) and the chat gating banner (D-149) also consume.
+the context detail panel), the review wizard's step 3 reconciliation (`LedgerReconcileStep`, D-137),
+plus the shared data hooks and row/badge components. The chat gating banner
+(`features/chat/LedgerGateBanner`, D-149) also consumes `useLedger` + `LedgerEntryRow` from here.
 
 ## Key files
 - `ledger-api.ts` — React Query hooks over `/contexts/:id/ledger[/:entryId]`: `useLedger` (GET list),
