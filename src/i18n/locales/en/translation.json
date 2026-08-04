@@ -2,6 +2,7 @@
   "common": {
     "logoAlt": "Heediq",
     "loading": "Loading",
+    "progress": "Progress",
     "retry": "Retry",
     "checkingSession": "Checking your session",
     "dismiss": "Dismiss",
@@ -149,8 +150,24 @@
   },
   "capture": {
     "title": "Capture",
-    "subtitle": "Add anything to your Context Library. Upload a text file to get started — recording and audio uploads are coming soon.",
+    "subtitle": "Add anything to your Context Library. Upload an audio file to transcribe, or a text file to file directly — live recording is coming soon.",
+    "audio": {
+      "heading": "Audio file",
+      "prompt": "Upload an audio file (.webm, .mp4/.m4a, .mp3, .wav, or .ogg) and we’ll transcribe it into your library.",
+      "choose": "Choose an audio file",
+      "chooseAnother": "Choose a different file",
+      "titleLabel": "Title",
+      "selected": "Selected {{name}}",
+      "submit": "Upload & transcribe",
+      "uploading": "Uploading…",
+      "uploadingPct": "Uploading… {{pct}}%",
+      "uploadProgress": "Upload progress",
+      "wrongType": "That’s not a supported audio file. Use .webm, .mp4/.m4a, .mp3, .wav, or .ogg.",
+      "tooLarge": "That file is too large — audio files must be under 2 GB.",
+      "submitError": "Something went wrong uploading your audio. Please try again."
+    },
     "text": {
+      "heading": "Text file",
       "prompt": "Upload a text file (.txt or .md) and we’ll file it into your library.",
       "choose": "Choose a text file",
       "chooseAnother": "Choose a different file",

@@ -1,7 +1,53 @@
 import { useCallback } from 'react'
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query'
-import type { ExtractedItem, Source, SourceStatus, Summary } from '@heediq/shared'
+import type {
+  ExtractedItem,
+  PresignUploadRequest,
+  PresignUploadResponse,
+  Source,
+  SourceStatus,
+  Summary,
+} from '@heediq/shared'
 import { apiClient, ApiClientError } from '../../lib/api-client'
+
+/** The whisper model sent at `/jobs` — `'small'` is the free-tier-safe transcription model;
+ * `'large-v3'` is paid-only and 403s on the free tier (D-060), so the audio path always sends
+ * `'small'` (a model/tier picker is a later nicety). */
+const FREE_TIER_WHISPER_MODEL = 'small' as const
+
+/** Create the empty Source shell shared by every ingest path (`POST /sources {title}`). */
+async function createSourceShell(title: string): Promise<string> {
+  const { source } = await apiClient.post<{ source: Source }>('/sources', { title })
+  return source.sourceId
+}
+
+/**
+ * PUT a File straight to its presigned S3 URL with determinate upload progress. Uses
+ * `XMLHttpRequest`, not `fetch`, because only XHR exposes `upload.onprogress` — `fetch` cannot report
+ * request-body upload progress, and this is a potentially multi-GB audio file (2 GB cap). Raw S3: no
+ * auth header, and the `Content-Type` must match the type the URL was signed for or S3 rejects the PUT.
+ */
+function putToPresignedUrl(
+  uploadUrl: string,
+  file: File,
+  contentType: string,
+  onProgress: (pct: number) => void,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+    xhr.open('PUT', uploadUrl)
+    xhr.setRequestHeader('Content-Type', contentType)
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100))
+    }
+    xhr.onload = () =>
+      xhr.status >= 200 && xhr.status < 300
+        ? resolve()
+        : reject(new Error(`S3 upload failed (status ${xhr.status})`))
+    xhr.onerror = () => reject(new Error('S3 upload network error'))
+    xhr.send(file)
+  })
+}
 
 /** Badge tone per Source status — one mapping shared by the library list and the detail header. */
 export const SOURCE_STATUS_TONE: Record<SourceStatus, 'neutral' | 'active' | 'success' | 'danger'> = {
@@ -54,11 +100,52 @@ export function useIngestText() {
   const queryClient = useQueryClient()
   return useCallback(
     async ({ title, text }: { title: string; text: string }): Promise<string> => {
-      const { source } = await apiClient.post<{ source: Source }>('/sources', { title })
-      await apiClient.post<{ jobId: string }>(`/sources/${source.sourceId}/text`, { text })
+      const sourceId = await createSourceShell(title)
+      await apiClient.post<{ jobId: string }>(`/sources/${sourceId}/text`, { text })
       // The new Source now exists (uploading→processing) — refresh the library list so it appears.
       void queryClient.invalidateQueries({ queryKey: sourceKeys.list() })
-      return source.sourceId
+      return sourceId
+    },
+    [queryClient],
+  )
+}
+
+/**
+ * The audio-file ingest path (D-150): create a Source shell, presign an S3 upload, PUT the file with
+ * live progress, then enqueue transcription (`POST /sources/:id/jobs`). Presign also stamps
+ * `audioS3Key`+`sourceType='audio'` on the row server-side — a precondition for `/jobs`, so it must
+ * run before the enqueue. Sends `model: 'small'` (free-tier-safe; D-060). Resolves to the new
+ * `sourceId` so the caller can route to detail, where transcribe → summarize → classify progress lands
+ * over the WS framework. Invalidates the library list so the new Source appears immediately.
+ */
+export function useUploadAudio() {
+  const queryClient = useQueryClient()
+  return useCallback(
+    async ({
+      title,
+      file,
+      contentType,
+      onProgress,
+    }: {
+      title: string
+      file: File
+      contentType: PresignUploadRequest['contentType']
+      onProgress: (pct: number) => void
+    }): Promise<string> => {
+      const sourceId = await createSourceShell(title)
+      const { uploadUrl } = await apiClient.post<PresignUploadResponse>('/upload/presign', {
+        sourceId,
+        contentType,
+        fileSizeBytes: file.size,
+      } satisfies PresignUploadRequest)
+      await putToPresignedUrl(uploadUrl, file, contentType, onProgress)
+      await apiClient.post<{ jobId: string }>(`/sources/${sourceId}/jobs`, {
+        sourceId,
+        model: FREE_TIER_WHISPER_MODEL,
+      })
+      // The new Source now exists (uploading→processing) — refresh the library list so it appears.
+      void queryClient.invalidateQueries({ queryKey: sourceKeys.list() })
+      return sourceId
     },
     [queryClient],
   )
