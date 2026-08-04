@@ -14,6 +14,7 @@ import {
   LoadingMark,
   Logo,
   Modal,
+  Progress,
   Select,
   Skeleton,
   Spinner,
@@ -65,6 +66,16 @@ export function DevUiGalleryPage() {
           <Spinner size="sm" />
           <Spinner size="md" />
           <Spinner size="lg" />
+        </div>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-h2">Progress</h2>
+        <div className="flex max-w-sm flex-col gap-3">
+          <Progress value={30} aria-label="Upload 30%" />
+          <Progress value={72} aria-label="Upload 72%" />
+          <Progress value={100} tone="success" aria-label="Upload complete" />
+          <Progress value={50} size="sm" aria-label="Thin progress" />
         </div>
       </section>
 
