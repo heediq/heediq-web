@@ -1,4 +1,5 @@
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
+import { useCallback } from 'react'
+import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { ExtractedItem, Source, SourceStatus, Summary } from '@heediq/shared'
 import { apiClient, ApiClientError } from '../../lib/api-client'
 
@@ -40,6 +41,27 @@ export function useSourcesList() {
     initialPageParam: null as string | null,
     getNextPageParam: (last) => last.nextCursor,
   })
+}
+
+/**
+ * The text-file ingest path (D-150): create a Source shell (`POST /sources`) then push the file's
+ * text into it (`POST /sources/:id/text`), which enqueues summarize → classify → extract and skips
+ * transcription. Resolves to the new `sourceId` so the caller can route to its detail page, where
+ * the WS-driven status/classification updates land. Invalidates the library list so the new Source
+ * appears there immediately.
+ */
+export function useIngestText() {
+  const queryClient = useQueryClient()
+  return useCallback(
+    async ({ title, text }: { title: string; text: string }): Promise<string> => {
+      const { source } = await apiClient.post<{ source: Source }>('/sources', { title })
+      await apiClient.post<{ jobId: string }>(`/sources/${source.sourceId}/text`, { text })
+      // The new Source now exists (uploading→processing) — refresh the library list so it appears.
+      void queryClient.invalidateQueries({ queryKey: sourceKeys.list() })
+      return source.sourceId
+    },
+    [queryClient],
+  )
 }
 
 export function useSource(id: string) {

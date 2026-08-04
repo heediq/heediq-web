@@ -15,7 +15,7 @@ export function AuthCallbackPage() {
       const tokens = await exchangeCodeForTokens(new URLSearchParams(window.location.search))
       applyTokens(tokens)
     },
-    onDone: () => navigate('/sources', { replace: true }),
+    onDone: () => navigate('/capture', { replace: true }),
   })
 
   if (showLoading) {

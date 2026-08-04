@@ -13,6 +13,7 @@ import { Can } from './lib/rbac/Can'
 import { pageVariants, transition } from './lib/motion'
 import { HomePage } from './routes/HomePage'
 import { AuthCallbackPage } from './routes/AuthCallbackPage'
+import { CapturePage } from './routes/CapturePage'
 import { SourcesLibraryPage } from './routes/SourcesLibraryPage'
 import { SourceDetailPage } from './routes/SourceDetailPage'
 import { ReviewWizardPage } from './routes/ReviewWizardPage'
@@ -56,6 +57,18 @@ function AnimatedRoutes() {
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<PageTransition><HomePage /></PageTransition>} />
         <Route path="/auth/callback" element={<PageTransition><AuthCallbackPage /></PageTransition>} />
+        <Route
+          path="/capture"
+          element={
+            <ProtectedRoute>
+              <AppShell>
+                <Can permission="sources:create" fallback={<Navigate to="/sources" replace />}>
+                  <PageTransition><CapturePage /></PageTransition>
+                </Can>
+              </AppShell>
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/sources"
           element={

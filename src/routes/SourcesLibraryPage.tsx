@@ -1,10 +1,11 @@
 import { useCallback, type KeyboardEvent } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
-import { FileAudio } from 'lucide-react'
+import { FileAudio, Plus } from 'lucide-react'
 import type { WsEventPayloadMap } from '@heediq/shared'
 import { Badge, Button, EmptyState, ErrorState, Table } from '../components/ui'
+import { Can } from '../lib/rbac/Can'
 import { useWsEvent } from '../lib/ws/useWsEvent'
 import { useSourcesList, sourceKeys, SOURCE_STATUS_TONE } from '../features/sources/sources-api'
 
@@ -41,7 +42,16 @@ export function SourcesLibraryPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 p-8">
-      <h1 className="text-h1 text-text-primary">{t('sourcesLibrary.title')}</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-h1 text-text-primary">{t('sourcesLibrary.title')}</h1>
+        <Can permission="sources:create">
+          <Button asChild size="sm">
+            <Link to="/capture">
+              <Plus className="size-4" /> {t('sourcesLibrary.capture')}
+            </Link>
+          </Button>
+        </Can>
+      </div>
 
       {query.isError ? (
         <ErrorState
@@ -54,6 +64,15 @@ export function SourcesLibraryPage() {
           icon={FileAudio}
           title={t('sourcesLibrary.empty.title')}
           description={t('sourcesLibrary.empty.description')}
+          action={
+            <Can permission="sources:create">
+              <Button asChild>
+                <Link to="/capture">
+                  <Plus className="size-4" /> {t('sourcesLibrary.capture')}
+                </Link>
+              </Button>
+            </Can>
+          }
         />
       ) : (
         <>

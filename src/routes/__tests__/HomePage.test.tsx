@@ -41,7 +41,7 @@ function renderHome() {
       <AuthProvider>
         <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route path="/sources" element={<p>sources library</p>} />
+          <Route path="/capture" element={<p>capture landing</p>} />
         </Routes>
       </AuthProvider>
     </MemoryRouter>,
@@ -133,13 +133,13 @@ describe('HomePage', () => {
     await waitFor(() => expect(googleButton).not.toBeDisabled())
   })
 
-  it('redirects an already-authenticated user straight to /sources', async () => {
+  it('redirects an already-authenticated user straight to /capture', async () => {
     setRefreshToken('stored-refresh-token')
     refreshTokens.mockResolvedValue({ access_token: 'at', id_token: 'it', expires_in: 3600 })
 
     renderHome()
 
-    await waitFor(() => expect(screen.getByText('sources library')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('capture landing')).toBeInTheDocument())
   })
 
   it('routes a brand-new email to the shared verify+password flow and sends a code (D-089)', async () => {
@@ -202,7 +202,7 @@ describe('HomePage', () => {
     await waitFor(() =>
       expect(initiateAuthPassword).toHaveBeenCalledWith('new@heediq.com', 'Password123!'),
     )
-    await waitFor(() => expect(screen.getByText('sources library')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('capture landing')).toBeInTheDocument())
   })
 
   it('routes an existing native account to the sign-in form and signs in', async () => {
@@ -224,7 +224,7 @@ describe('HomePage', () => {
     await waitFor(() =>
       expect(initiateAuthPassword).toHaveBeenCalledWith('existing@heediq.com', 'CorrectPassword1!'),
     )
-    await waitFor(() => expect(screen.getByText('sources library')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('capture landing')).toBeInTheDocument())
   })
 
   it('shows a friendly message when sign-in fails with the wrong password', async () => {

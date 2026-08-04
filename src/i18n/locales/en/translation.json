@@ -137,6 +137,7 @@
     "columnCreated": "Created",
     "openSource": "Open {{title}}",
     "loadMore": "Load more",
+    "capture": "Capture",
     "empty": {
       "title": "No sources yet",
       "description": "Anything you capture — a recording, an audio file, or a text file — shows up here."
@@ -144,6 +145,21 @@
     "loadError": {
       "title": "Couldn’t load your sources",
       "description": "Something went wrong fetching your sources. Please try again."
+    }
+  },
+  "capture": {
+    "title": "Capture",
+    "subtitle": "Add anything to your Context Library. Upload a text file to get started — recording and audio uploads are coming soon.",
+    "text": {
+      "prompt": "Upload a text file (.txt or .md) and we’ll file it into your library.",
+      "choose": "Choose a text file",
+      "chooseAnother": "Choose a different file",
+      "titleLabel": "Title",
+      "previewLabel": "Preview of {{name}}",
+      "submit": "Add to library",
+      "emptyFile": "That file is empty — pick one with some text in it.",
+      "readError": "Couldn’t read that file. Please try another.",
+      "submitError": "Something went wrong adding your file. Please try again."
     }
   },
   "sourceStatus": {
