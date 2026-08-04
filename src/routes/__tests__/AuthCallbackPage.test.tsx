@@ -21,7 +21,7 @@ function renderCallback(path: string) {
         <Routes>
           <Route path="/" element={<p>home screen</p>} />
           <Route path="/auth/callback" element={<AuthCallbackPage />} />
-          <Route path="/sources" element={<p>sources library</p>} />
+          <Route path="/capture" element={<p>capture landing</p>} />
         </Routes>
       </AuthProvider>
     </MemoryRouter>,
@@ -42,7 +42,7 @@ describe('AuthCallbackPage', () => {
 
     renderCallback('/auth/callback?code=already-used&state=xyz')
 
-    await waitFor(() => expect(screen.getByText('sources library')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('capture landing')).toBeInTheDocument())
     expect(exchangeCodeForTokens).not.toHaveBeenCalled()
   })
 
@@ -54,7 +54,7 @@ describe('AuthCallbackPage', () => {
     await waitFor(() => expect(screen.getByRole('status')).toBeInTheDocument())
   })
 
-  it('exchanges the code and redirects to /sources on success', async () => {
+  it('exchanges the code and redirects to /capture on success', async () => {
     exchangeCodeForTokens.mockResolvedValue({
       access_token: 'at',
       id_token: 'it',
@@ -65,7 +65,7 @@ describe('AuthCallbackPage', () => {
 
     renderCallback('/auth/callback?code=abc&state=xyz')
 
-    await waitFor(() => expect(screen.getByText('sources library')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('capture landing')).toBeInTheDocument())
   })
 
   it('shows a designed error state with a retry action on failure', async () => {

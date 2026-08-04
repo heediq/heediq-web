@@ -48,6 +48,7 @@ describe('SourcesLibraryPage', () => {
   beforeEach(() => {
     getMock.mockReset()
     getMock.mockImplementation((path: string) => {
+      if (path === '/me') return Promise.resolve({ effectivePermissions: ['sources:create'] })
       if (path === '/sources') return Promise.resolve({ sources: [s1], nextCursor: 'cursor-2' })
       if (path === '/sources?cursor=cursor-2') return Promise.resolve({ sources: [s2], nextCursor: null })
       return Promise.reject(new Error(`unexpected ${path}`))
@@ -59,6 +60,12 @@ describe('SourcesLibraryPage', () => {
     renderPage()
     expect(await screen.findByText('Sprint planning')).toBeInTheDocument()
     expect(screen.getByText('Ready')).toBeInTheDocument()
+  })
+
+  it('shows a Capture CTA to the capture landing when the user can create sources', async () => {
+    renderPage()
+    const cta = await screen.findByRole('link', { name: /Capture/ })
+    expect(cta).toHaveAttribute('href', '/capture')
   })
 
   it('shows an empty state when there are no sources', async () => {

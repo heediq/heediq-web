@@ -56,7 +56,7 @@ export function HomePage() {
   const showSessionLoading = usePerceivedLoading(status === 'loading', { delay: 150, minDuration: 600 })
 
   useEffect(() => {
-    if (status === 'authenticated') navigate('/sources', { replace: true })
+    if (status === 'authenticated') navigate('/capture', { replace: true })
   }, [status, navigate])
 
   useEffect(() => {
@@ -87,7 +87,7 @@ export function HomePage() {
       token_type: 'Bearer',
       expires_in: tokens.expiresIn,
     })
-    navigate('/sources', { replace: true })
+    navigate('/capture', { replace: true })
   }
 
   const emailAction = useAsyncAction(async () => {
