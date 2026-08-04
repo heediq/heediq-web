@@ -38,6 +38,37 @@ class FakeXHR {
 }
 vi.stubGlobal('XMLHttpRequest', FakeXHR as unknown as typeof XMLHttpRequest)
 
+/**
+ * A stub `MediaRecorder` + `getUserMedia` for the live-record path — jsdom has neither. `stop()` emits a
+ * single `audio/webm` chunk then fires `onstop`, so the recorder resolves a non-empty Blob. Set
+ * `getUserMediaOk = false` before a test to simulate a denied-permission start.
+ */
+let getUserMediaOk = true
+class FakeMediaRecorder {
+  static isTypeSupported = () => true
+  ondataavailable: ((e: { data: Blob }) => void) | null = null
+  onstop: (() => void) | null = null
+  constructor(
+    public stream: MediaStream,
+    public options?: { mimeType?: string },
+  ) {}
+  start() {}
+  stop() {
+    this.ondataavailable?.({ data: new Blob([new Uint8Array(16)], { type: 'audio/webm' }) })
+    this.onstop?.()
+  }
+}
+vi.stubGlobal('MediaRecorder', FakeMediaRecorder as unknown as typeof MediaRecorder)
+Object.defineProperty(navigator, 'mediaDevices', {
+  configurable: true,
+  value: {
+    getUserMedia: () =>
+      getUserMediaOk
+        ? Promise.resolve({ getTracks: () => [{ stop: () => {} }] } as unknown as MediaStream)
+        : Promise.reject(new Error('NotAllowedError')),
+  },
+})
+
 /** A File whose `text()` resolves to `content` — jsdom's Blob doesn't implement text(). */
 function textFile(name: string, content: string): File {
   const file = new File([content], name, { type: 'text/plain' })
@@ -201,6 +232,54 @@ describe('CapturePage', () => {
       expect(screen.queryByText('detail page')).not.toBeInTheDocument()
       // The enqueue must not fire when the upload never succeeded.
       expect(postMock).not.toHaveBeenCalledWith('/sources/src-fail/jobs', expect.anything())
+    })
+  })
+
+  describe('record path', () => {
+    it('shows the start-recording control', () => {
+      getUserMediaOk = true
+      renderPage()
+      expect(screen.getByRole('button', { name: 'Start recording' })).toBeInTheDocument()
+    })
+
+    it('records, presigns, uploads the webm, enqueues transcription, and routes to detail', async () => {
+      getUserMediaOk = true
+      xhrStatus = 200
+      postMock.mockImplementation((path: string) => {
+        if (path === '/sources') return Promise.resolve({ source: { sourceId: 'src-rec' } })
+        if (path === '/upload/presign')
+          return Promise.resolve({ uploadUrl: 'https://s3/put', s3Key: 'k', expiresIn: 900 })
+        return Promise.resolve({ jobId: 'job-rec' })
+      })
+      renderPage()
+      await userEvent.click(screen.getByRole('button', { name: 'Start recording' }))
+      await userEvent.click(await screen.findByRole('button', { name: /Recording,/ }))
+
+      await waitFor(() => expect(screen.getByText('detail page')).toBeInTheDocument())
+      expect(postMock).toHaveBeenCalledWith('/sources', expect.objectContaining({ title: expect.any(String) }))
+      expect(postMock).toHaveBeenCalledWith('/upload/presign', {
+        sourceId: 'src-rec',
+        contentType: 'audio/webm',
+        fileSizeBytes: 16,
+      })
+      expect(postMock).toHaveBeenCalledWith('/sources/src-rec/jobs', {
+        sourceId: 'src-rec',
+        model: 'small',
+      })
+    })
+
+    it('surfaces a permission-denied message and does not start recording', async () => {
+      getUserMediaOk = false
+      renderPage()
+      await userEvent.click(screen.getByRole('button', { name: 'Start recording' }))
+
+      expect(
+        await screen.findByText(
+          'Heediq needs microphone access to record. Allow it in your browser settings, then try again.',
+        ),
+      ).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: /Recording,/ })).not.toBeInTheDocument()
+      getUserMediaOk = true
     })
   })
 })

@@ -5,9 +5,9 @@ Both sides of a Source in the Context Library era. **Read:** the **library list*
 Sources (newest-first, cursor-paginated) plus a single Source's Summary (transcript + gist, D-135)
 and its curated `ExtractedItem`s (D-135), grouped by category. **Write (ingest, D-150):** the
 **text-file capture** path — the first of the Capture landing's three ingest methods (D-026/D-150) —
-which pushes a `.txt`/`.md` file straight into the library, skipping transcription. Step 5 slice B +
-the Capture UI. Powers `CapturePage`, `SourcesLibraryPage`, and `SourceDetailPage` and feeds the
-review wizard (slice C).
+which pushes a `.txt`/`.md` file straight into the library, skipping transcription; the **audio-file**
+and **live-record** paths, which both feed the transcription pipeline. Step 5 slice B + the Capture UI.
+Powers `CapturePage`, `SourcesLibraryPage`, and `SourceDetailPage` and feeds the review wizard (slice C).
 
 ## Key Files
 - `sources-api.ts` — TanStack Query hooks: `useSourcesList` (`GET /sources`, a **`useInfiniteQuery`**
@@ -41,9 +41,24 @@ review wizard (slice C).
   browsers report audio MIME inconsistently) and validated (plus a 2 GB size cap) **before** any
   network call — wrong-type/oversize files are rejected with a toast. Routes to the new Source's detail
   page on success; all copy is `t()`-driven.
+- `useMediaRecorder.ts` — live mic capture (D-026): feature-detects `MediaRecorder`+`getUserMedia`+
+  `audio/webm` support, runs `getUserMedia({audio:true})` → `MediaRecorder`, collects chunks, and on
+  `stop()` resolves an **`audio/webm` `Blob`**. State machine `idle → recording → idle` (plus terminal
+  `unsupported`); exposes `state`, `elapsedMs` (live), `start()`, `stop()`. The three failure modes are
+  raised as a typed `MediaRecorderError` with `reason` ∈ `unsupported` / `permission-denied` (getUserMedia
+  rejected) / `empty` (0-byte capture). **Online-only (D-119)** — no offline/IndexedDB buffering; mic
+  tracks are always stopped on `stop()` and on unmount.
+- `RecordIngestForm.tsx` — the live-record ingest method of the Capture landing: a `ListenButton` (kit
+  3-state control) driven by `useMediaRecorder`, a title `Input` prefilled with a date-stamped default
+  (`capture.record.defaultTitle`, editable, locked while recording/uploading), and a determinate kit
+  `Progress` bar during the S3 upload. On stop it wraps the Blob as a `File(…, {type:'audio/webm'})` and
+  **feeds it straight through `useUploadAudio`** (contentType `'audio/webm'`) — the same presign → XHR
+  PUT → `/jobs {model:'small'}` pipeline as the audio-file path; PR3d adds *capture*, not a new upload
+  path. Behind `useAsyncAction` (D-120). permission-denied/unsupported/empty each surface their own
+  toast/`Callout`; all copy is `t()`-driven. Routes to the new Source's detail page on success.
 - `../../routes/CapturePage.tsx` — the Capture landing (route `/capture`): a titled shell hosting the
-  ingest methods — `AudioIngestForm` and `TextIngestForm`, each under a method heading. Live-record is
-  the remaining method (PR3d).
+  three D-026 ingest methods, each under a heading — `RecordIngestForm` (live mic, primary "Listen"
+  path), `AudioIngestForm`, and `TextIngestForm`.
 - `../../routes/SourcesLibraryPage.tsx` — the library list: a `Table` of Title/Status/Created with
   `interactive` rows navigating to `/sources/:id`, its own loading/empty/error branches, a **Load
   more** button (`hasNextPage`), and `useWsEvent('job_status')`/`('classification_ready')`
@@ -59,9 +74,11 @@ review wizard (slice C).
 - **Capture (ingest):** `/capture` (`ProtectedRoute` + `AppShell`, gated by `Can permission=
   "sources:create"` — falls back to `/sources`). Two write paths: **text** → `useIngestText`
   (`POST /sources` then `POST /sources/:id/text`) → summarize → classify → extract (no transcription);
-  **audio** → `useUploadAudio` (`POST /sources` → `POST /upload/presign` → XHR PUT to S3 with progress
-  → `POST /sources/:id/jobs {model:'small'}`) → transcribe → summarize → classify → extract. Both
-  navigate to `/sources/:sourceId`, where the async pipeline progress lands over the WS framework.
+  **audio** and **record** → `useUploadAudio` (`POST /sources` → `POST /upload/presign` → XHR PUT to S3
+  with progress → `POST /sources/:id/jobs {model:'small'}`) → transcribe → summarize → classify →
+  extract. The record path is just an in-browser `audio/webm` capture (`useMediaRecorder`) wrapped as a
+  `File` and handed to that same `useUploadAudio`. All three navigate to `/sources/:sourceId`, where the
+  async pipeline progress lands over the WS framework.
   `/capture` is also the
   post-auth landing (`AuthCallbackPage`, `HomePage`), and `SourcesLibraryPage` links to it via a
   `Can`-gated **Capture** CTA (header + empty state).
@@ -82,7 +99,9 @@ review wizard (slice C).
   `POST /sources` (`CreateSourceRequestSchema`), `POST /sources/:id/text` (`IngestTextRequestSchema`),
   `POST /upload/presign` (`PresignUploadRequest/ResponseSchema` — `contentType` ∈ the five audio
   types, 2 GB cap), `POST /sources/:id/jobs` (`EnqueueJobRequestSchema`, `model` = `WhisperModel`).
-  i18n for capture: `capture.*` (incl. `capture.audio.*`), `sourcesLibrary.capture`, `common.progress`.
+  i18n for capture: `capture.*` (incl. `capture.audio.*` and `capture.record.*`), `listenButton.*`,
+  `sourcesLibrary.capture`, `common.progress`. The record path adds no backend surface — it reuses the
+  audio presign/`/jobs` endpoints with `contentType:'audio/webm'`.
 
 ## Testing
 - `__tests__/ExtractedItemsList.test.tsx` — grouping/order, provenance + confidence + status badge,
@@ -92,15 +111,22 @@ review wizard (slice C).
 - `../../routes/__tests__/SourcesLibraryPage.test.tsx` — list render + status badge, empty state,
   load error + retry, row-click navigation, Load more pagination, a `job_status` WS event
   refetching the list, and the `Can`-gated **Capture** CTA linking to `/capture`.
-- `../../routes/__tests__/CapturePage.test.tsx` — both ingest methods. Text: prompt, filename→title
+- `useMediaRecorder.test.tsx` — start→recording, stop→resolves an `audio/webm` Blob + back to idle,
+  permission-denied reject, empty-capture reject, unsupported detection. `MediaRecorder`+`getUserMedia`
+  are stubbed via module-level knobs set per-test (no `beforeEach` reset — same discipline as below).
+- `../ui/ListenButton/ListenButton.test.tsx` — the three states: idle (enabled, click→start), recording
+  (live label, click→stop), processing (disabled + `aria-busy`, click ignored).
+- `../../routes/__tests__/CapturePage.test.tsx` — all three ingest methods. Text: prompt, filename→title
   prefill + preview, create + ingest + navigate, error-stays-put, empty-file rejection. Audio: prompt,
   filename→title prefill, create + presign + upload + enqueue + navigate (asserts the presign
   `fileSizeBytes` and `model:'small'`), unsupported-audio-type rejection, and S3-upload-failure
-  stays-put (asserts `/jobs` never fires). The S3 PUT is exercised via a stubbed `XMLHttpRequest`
-  (`FakeXHR`) whose `status` is set per-test; the two file inputs are told apart by their `accept`.
-  **Note:** intentionally no `beforeEach` mock reset — see the comment in it; resetting a `vi.fn`
-  between tests trips a vitest v2 spy-result-tracking bug that mis-flags the caught failure-path
-  rejections as unhandled.
+  stays-put (asserts `/jobs` never fires). Record: start control, record → presign → upload → enqueue →
+  navigate (asserts `contentType:'audio/webm'` + `model:'small'`), permission-denied stays-put. The S3
+  PUT is exercised via a stubbed `XMLHttpRequest` (`FakeXHR`) and the recorder via a stubbed
+  `MediaRecorder`/`getUserMedia` (`FakeMediaRecorder` + `getUserMediaOk`), both set per-test; the two
+  file inputs are told apart by their `accept`. **Note:** intentionally no `beforeEach` mock reset — see
+  the comment in it; resetting a `vi.fn` between tests trips a vitest v2 spy-result-tracking bug that
+  mis-flags the caught failure-path rejections as unhandled.
 
 ## Gotchas
 - There's no "list a Context's sources" endpoint yet, so nothing links *into* source detail from a

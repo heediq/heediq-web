@@ -11,6 +11,7 @@ import {
   FullPageLoading,
   IdentityProviderButton,
   Input,
+  ListenButton,
   LoadingMark,
   Logo,
   Modal,
@@ -66,6 +67,25 @@ export function DevUiGalleryPage() {
           <Spinner size="sm" />
           <Spinner size="md" />
           <Spinner size="lg" />
+        </div>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-h2">ListenButton</h2>
+        <div className="flex flex-wrap items-center gap-3">
+          <ListenButton state="idle" label="Start recording" aria-label="Start recording" onClick={() => {}} />
+          <ListenButton
+            state="recording"
+            label="Recording… 00:12"
+            aria-label="Recording, 00:12 elapsed. Activate to stop."
+            onClick={() => {}}
+          />
+          <ListenButton
+            state="processing"
+            label="Uploading…"
+            aria-label="Processing your recording"
+            onClick={() => {}}
+          />
         </div>
       </section>
 

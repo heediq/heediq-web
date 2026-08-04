@@ -150,7 +150,7 @@
   },
   "capture": {
     "title": "Capture",
-    "subtitle": "Add anything to your Context Library. Upload an audio file to transcribe, or a text file to file directly — live recording is coming soon.",
+    "subtitle": "Add anything to your Context Library. Record straight from your mic, upload an audio file to transcribe, or a text file to file directly.",
     "audio": {
       "heading": "Audio file",
       "prompt": "Upload an audio file (.webm, .mp4/.m4a, .mp3, .wav, or .ogg) and we’ll transcribe it into your library.",
@@ -177,7 +177,26 @@
       "emptyFile": "That file is empty — pick one with some text in it.",
       "readError": "Couldn’t read that file. Please try another.",
       "submitError": "Something went wrong adding your file. Please try again."
+    },
+    "record": {
+      "heading": "Record",
+      "prompt": "Record straight from your mic — we’ll transcribe it into your library when you stop.",
+      "start": "Start recording",
+      "stop": "Stop recording",
+      "recording": "Recording… {{time}}",
+      "processing": "Uploading…",
+      "titleLabel": "Title",
+      "defaultTitle": "Recording {{date}}",
+      "permissionDenied": "Heediq needs microphone access to record. Allow it in your browser settings, then try again.",
+      "unsupported": "Your browser can’t record audio. Upload an audio file instead.",
+      "empty": "That recording was empty — nothing was captured.",
+      "submitError": "Something went wrong saving your recording. Please try again."
     }
+  },
+  "listenButton": {
+    "idleAria": "Start recording",
+    "recordingAria": "Recording, {{time}} elapsed. Activate to stop.",
+    "processingAria": "Processing your recording"
   },
   "sourceStatus": {
     "uploading": "Uploading",
