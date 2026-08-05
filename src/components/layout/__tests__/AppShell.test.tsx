@@ -4,17 +4,13 @@ import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
 import { AppShell } from '../AppShell'
 
-vi.mock('../../../lib/auth/AuthContext', () => ({
-  useAuth: () => ({ status: 'authenticated', login: vi.fn(), logout: vi.fn(), applyTokens: vi.fn() }),
-}))
-
-// TopBar renders a <Can>-gated Contexts link, which reads permissions via useQuery(GET /me).
+// TopBar + BottomTabBar render a <Can>-gated Contexts link, which reads permissions via GET /me.
 vi.mock('../../../lib/api-client', () => ({
   apiClient: { get: vi.fn().mockResolvedValue({ user: {}, org: {}, effectivePermissions: [] }) },
 }))
 
 describe('AppShell', () => {
-  it('renders the TopBar and its children inside main', () => {
+  it('renders the nav chrome and its children inside main', () => {
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
     render(
       <QueryClientProvider client={queryClient}>
@@ -25,7 +21,8 @@ describe('AppShell', () => {
         </MemoryRouter>
       </QueryClientProvider>,
     )
-    expect(screen.getByRole('link', { name: 'Settings' })).toBeInTheDocument()
+    // Settings appears in both the desktop TopBar nav and the mobile BottomTabBar (D-152).
+    expect(screen.getAllByRole('link', { name: 'Settings' }).length).toBeGreaterThanOrEqual(1)
     expect(screen.getByRole('main')).toHaveTextContent('page content')
   })
 })

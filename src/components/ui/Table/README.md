@@ -11,6 +11,18 @@ Composable table primitive with built-in loading (skeleton rows) and empty state
   `focus-visible` ring. It only styles; the consumer still supplies `role="button"`, `tabIndex={0}`,
   `onClick`, and an `onKeyDown` (Enter/Space) plus an `aria-label` (the Context Library list is the
   first consumer). Keeps row-as-link styling in the kit rather than hand-rolled in feature code.
+- `Table.Cell` takes `label` — the column header for this cell. On mobile it renders as the
+  `label:` in the `label: value` reflow (see below); on desktop it's ignored. Omit `label` on the
+  cell that acts as the card's title (usually the first column) and give it `className="max-sm:font-medium"`.
+
+## Mobile reflow (D-153)
+Below `sm` (640px) the table **reflows to stacked cards** — no horizontal scroll for primary content:
+each `Table.Row` becomes a bordered card, `thead` is hidden, and each `Table.Cell` renders its `label`
+prop as a left-aligned key with the value right-aligned (`justify-between`). This is CSS-only
+(`max-sm:*` utilities on the primitive); consumers only need to pass `label` on each cell and mark the
+title cell with `max-sm:font-medium`. At `sm` and up it's a normal `<table>` with `sm:overflow-x-auto`
+as the desktop-only escape hatch for genuinely wide tables. The invariant is enforced by the Playwright
+responsive harness (`e2e/responsive.e2e.ts`).
 
 ## States
 default row hover · loading (skeleton rows replace `Table.Body`, count via `loadingRowCount`,
@@ -32,9 +44,9 @@ error branch, rendered instead of the table).
   <Table.Body>
     {roles.map((role) => (
       <Table.Row key={role.roleId}>
-        <Table.Cell>{role.name}</Table.Cell>
-        <Table.Cell>{role.permissions.length}</Table.Cell>
-        <Table.Cell><Button onClick={() => edit(role)}>Edit</Button></Table.Cell>
+        <Table.Cell className="max-sm:font-medium">{role.name}</Table.Cell>
+        <Table.Cell label={t('roles.columnPermissions')}>{role.permissions.length}</Table.Cell>
+        <Table.Cell label={t('roles.columnActions')}><Button onClick={() => edit(role)}>Edit</Button></Table.Cell>
       </Table.Row>
     ))}
   </Table.Body>

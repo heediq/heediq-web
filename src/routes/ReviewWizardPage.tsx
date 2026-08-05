@@ -5,6 +5,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, Plus } from 'lucide-react'
 import type { Context, ReviewApprovalRequest } from '@heediq/shared'
 import { Badge, Button, Checkbox, EmptyState, ErrorState, Select, Skeleton, Stepper, useToast } from '../components/ui'
+import { PageContainer } from '../components/layout'
 import { apiClient } from '../lib/api-client'
 import { CreateContextModal } from '../features/contexts/CreateContextModal'
 import { LedgerReconcileStep } from '../features/ledger/LedgerReconcileStep'
@@ -62,16 +63,16 @@ export function ReviewWizardPage() {
 
   if (sourceQuery.isPending || itemsQuery.isPending || treeQuery.isPending) {
     return (
-      <div className="mx-auto flex w-full max-w-2xl flex-col gap-4 p-6">
+      <PageContainer size="prose" gap={4}>
         <Skeleton className="h-8 w-1/2" />
         <Skeleton className="h-24 w-full" />
-      </div>
+      </PageContainer>
     )
   }
 
   if (sourceQuery.isError || itemsQuery.isError || treeQuery.isError) {
     return (
-      <div className="mx-auto w-full max-w-2xl p-6">
+      <PageContainer size="prose">
         <ErrorState
           title={t('reviewWizard.loadError.title')}
           description={t('reviewWizard.loadError.description')}
@@ -81,7 +82,7 @@ export function ReviewWizardPage() {
             void treeQuery.refetch()
           }}
         />
-      </div>
+      </PageContainer>
     )
   }
 
@@ -93,7 +94,7 @@ export function ReviewWizardPage() {
   // reconciliation (step 2), the source flips to `approved` but we must stay in the wizard.
   if (source.classification === 'approved' && step === 0) {
     return (
-      <div className="mx-auto w-full max-w-2xl p-6">
+      <PageContainer size="prose">
         <EmptyState
           title={t('reviewWizard.alreadyFiled.title')}
           description={t('reviewWizard.alreadyFiled.description')}
@@ -103,7 +104,7 @@ export function ReviewWizardPage() {
             </Button>
           }
         />
-      </div>
+      </PageContainer>
     )
   }
 
@@ -130,7 +131,7 @@ export function ReviewWizardPage() {
   ]
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 p-6">
+    <PageContainer size="prose">
       <div className="flex flex-col gap-4">
         <Button variant="ghost" size="sm" className="self-start" onClick={() => navigate(`/sources/${sourceId}`)}>
           <ArrowLeft className="size-4" /> {t('reviewWizard.cancel')}
@@ -237,6 +238,6 @@ export function ReviewWizardPage() {
         defaultDomain={proposal?.domain}
         onCreated={(context: Context) => setContextId(context.contextId)}
       />
-    </div>
+    </PageContainer>
   )
 }

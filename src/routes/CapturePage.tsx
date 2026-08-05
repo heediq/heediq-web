@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { PageContainer, PageHeader } from '../components/layout'
 import { AudioIngestForm } from '../features/sources/AudioIngestForm'
 import { RecordIngestForm } from '../features/sources/RecordIngestForm'
 import { TextIngestForm } from '../features/sources/TextIngestForm'
@@ -11,11 +12,8 @@ import { TextIngestForm } from '../features/sources/TextIngestForm'
 export function CapturePage() {
   const { t } = useTranslation()
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 p-8">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-h1 text-text-primary">{t('capture.title')}</h1>
-        <p className="text-body text-text-secondary">{t('capture.subtitle')}</p>
-      </div>
+    <PageContainer size="prose">
+      <PageHeader title={t('capture.title')} description={t('capture.subtitle')} />
       <div className="flex flex-col gap-2">
         <h2 className="text-h2 text-text-primary">{t('capture.record.heading')}</h2>
         <RecordIngestForm />
@@ -28,6 +26,6 @@ export function CapturePage() {
         <h2 className="text-h2 text-text-primary">{t('capture.text.heading')}</h2>
         <TextIngestForm />
       </div>
-    </div>
+    </PageContainer>
   )
 }

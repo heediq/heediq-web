@@ -21,6 +21,13 @@ type EventMap = {
   review_opened: { sourceId: string }
   items_kept: { sourceId: string; contextId: string; keptCount: number }
   chat_sent: { conversationId: string; contextId: string }
+  // ── Interaction events (beyond the D-151 critical-path funnel). The broad "sensible activity"
+  // taxonomy is formalised under D-154; every event here stays ids/enums/counts only (D-093).
+  /** A primary-nav destination was tapped. `surface` distinguishes the mobile bottom tab bar from
+   * the desktop top bar so funnels can segment by form factor. */
+  nav_item_clicked: { item: string; surface: 'top' | 'bottom' }
+  /** The user signed out (from Settings → Account). */
+  logout_clicked: Record<string, never>
 }
 
 type Amplitude = typeof AmplitudeBrowser

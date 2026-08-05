@@ -10,6 +10,22 @@
   }
 }
 
+/* Safe-area insets — the fixed BottomTabBar and any bottom-anchored chrome must clear the iOS
+   home indicator / notch. Requires `viewport-fit=cover` on the viewport meta (index.html).
+   `*-safe` = the inset itself; `*-with-safe` variants bake it into a fixed chrome height. */
+@layer utilities {
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  /* Bottom padding a scroll region needs so its content clears a 64px fixed bottom bar + inset. */
+  .pb-bottom-nav {
+    padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
 /* LoadingMark keyframes — D-116 (audio-waveform pulse, supersedes D-074's rotation). Each bar
    scales height independently at a staggered phase; no group rotation. */
 .heediq-loader-bar {

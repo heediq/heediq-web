@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, ListChecks } from 'lucide-react'
 import type { SourceClassification, WsEventPayloadMap } from '@heediq/shared'
 import { Badge, Button, EmptyState, ErrorState, Skeleton } from '../components/ui'
+import { PageContainer } from '../components/layout'
 import { useWsEvent } from '../lib/ws/useWsEvent'
 import { ExtractedItemsList } from '../features/sources/ExtractedItemsList'
 import { useSource, useSourceSummary, useSourceItems, sourceKeys, SOURCE_STATUS_TONE } from '../features/sources/sources-api'
@@ -41,23 +42,23 @@ export function SourceDetailPage() {
 
   if (sourceQuery.isPending) {
     return (
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 p-6">
+      <PageContainer size="md" gap={4}>
         <Skeleton className="h-8 w-2/3" />
         <Skeleton className="h-5 w-24" />
         <Skeleton className="h-24 w-full" />
-      </div>
+      </PageContainer>
     )
   }
 
   if (sourceQuery.isError) {
     return (
-      <div className="mx-auto w-full max-w-3xl p-6">
+      <PageContainer size="md">
         <ErrorState
           title={t('sourceDetail.loadError.title')}
           description={t('sourceDetail.loadError.description')}
           onRetry={() => void sourceQuery.refetch()}
         />
-      </div>
+      </PageContainer>
     )
   }
 
@@ -65,7 +66,7 @@ export function SourceDetailPage() {
   const summary = summaryQuery.data?.summary ?? null
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-6">
+    <PageContainer size="md">
       <div className="flex flex-col gap-3">
         <Button variant="ghost" size="sm" className="self-start" onClick={() => navigate('/sources')}>
           <ArrowLeft className="size-4" /> {t('sourceDetail.back')}
@@ -137,6 +138,6 @@ export function SourceDetailPage() {
           <p className="text-caption text-text-secondary">{t('sourceDetail.transcriptUnavailable')}</p>
         )}
       </section>
-    </div>
+    </PageContainer>
   )
 }
