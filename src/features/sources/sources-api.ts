@@ -9,6 +9,7 @@ import type {
   Summary,
 } from '@heediq/shared'
 import { apiClient, ApiClientError } from '../../lib/api-client'
+import { track, type CaptureMethod } from '../../lib/analytics/analytics'
 
 /** The whisper model sent at `/jobs` — `'small'` is the free-tier-safe transcription model;
  * `'large-v3'` is paid-only and 403s on the free tier (D-060), so the audio path always sends
@@ -101,6 +102,7 @@ export function useIngestText() {
   return useCallback(
     async ({ title, text }: { title: string; text: string }): Promise<string> => {
       const sourceId = await createSourceShell(title)
+      track('source_created', { sourceId, method: 'text' })
       await apiClient.post<{ jobId: string }>(`/sources/${sourceId}/text`, { text })
       // The new Source now exists (uploading→processing) — refresh the library list so it appears.
       void queryClient.invalidateQueries({ queryKey: sourceKeys.list() })
@@ -125,14 +127,19 @@ export function useUploadAudio() {
       title,
       file,
       contentType,
+      method,
       onProgress,
     }: {
       title: string
       file: File
       contentType: PresignUploadRequest['contentType']
+      /** Which Capture method drove this upload — `'record'` (live mic) or `'audio'` (file). Both go
+       * through the same presign+upload+transcribe path; this only tags the analytics funnel (D-151). */
+      method: Extract<CaptureMethod, 'record' | 'audio'>
       onProgress: (pct: number) => void
     }): Promise<string> => {
       const sourceId = await createSourceShell(title)
+      track('source_created', { sourceId, method })
       const { uploadUrl } = await apiClient.post<PresignUploadResponse>('/upload/presign', {
         sourceId,
         contentType,

@@ -7,6 +7,7 @@ import { queryClient } from './lib/query-client'
 import { AuthProvider } from './lib/auth/AuthContext'
 import { ProtectedRoute } from './lib/auth/ProtectedRoute'
 import { WsProvider } from './lib/ws/WsProvider'
+import { AnalyticsBridge } from './lib/analytics/AnalyticsBridge'
 import { AppShell } from './components/layout/AppShell'
 import { FullPageLoading, ToastProvider } from './components/ui'
 import { Can } from './lib/rbac/Can'
@@ -194,6 +195,7 @@ export function App() {
         <BrowserRouter>
           <AuthProvider>
             <WsProvider>
+              <AnalyticsBridge />
               <AnimatedRoutes />
             </WsProvider>
           </AuthProvider>

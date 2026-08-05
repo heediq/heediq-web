@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { setAccessTokenGetter } from '../api-client'
+import { identifyUser, resetAnalytics } from '../analytics/analytics'
 import { logoutUrl, refreshTokens, startLogin, type LinkableProvider, type TokenResponse } from './cognito-oauth'
 import { clearSession, getIdToken, getRefreshToken, setRefreshToken, setSession } from './token-store'
 
@@ -32,6 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refreshTokens(refreshToken)
       .then((tokens) => {
         setSession(tokens)
+        identifyUser(tokens.id_token)
         setStatus('authenticated')
       })
       .catch(() => {
@@ -43,6 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const applyTokens = useCallback((tokens: TokenResponse) => {
     setSession(tokens)
     setRefreshToken(tokens.refresh_token)
+    identifyUser(tokens.id_token)
     setStatus('authenticated')
   }, [])
 
@@ -50,6 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => {
     clearSession()
+    resetAnalytics()
     setStatus('anonymous')
     window.location.assign(logoutUrl())
   }, [])

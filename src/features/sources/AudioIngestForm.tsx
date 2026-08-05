@@ -6,6 +6,7 @@ import type { PresignUploadRequest } from '@heediq/shared'
 import { Button, Card, Input, Progress, useToast } from '../../components/ui'
 import { useAsyncAction } from '../../lib/useAsyncAction'
 import { useUploadAudio } from './sources-api'
+import { track } from '../../lib/analytics/analytics'
 
 /** 2 GB upload cap (matches the presign endpoint's limit). */
 const MAX_BYTES = 2 * 1024 * 1024 * 1024
@@ -72,11 +73,13 @@ export function AudioIngestForm() {
   const submit = useAsyncAction(async () => {
     if (!file || !contentType || title.trim().length === 0) return
     setProgress(0)
+    track('capture_started', { method: 'audio' })
     try {
       const sourceId = await uploadAudio({
         title: title.trim(),
         file,
         contentType,
+        method: 'audio',
         onProgress: setProgress,
       })
       navigate(`/sources/${sourceId}`)

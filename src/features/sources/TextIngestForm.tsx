@@ -5,6 +5,7 @@ import { FileText, Upload } from 'lucide-react'
 import { Button, Card, Input, useToast } from '../../components/ui'
 import { useAsyncAction } from '../../lib/useAsyncAction'
 import { useIngestText } from './sources-api'
+import { track } from '../../lib/analytics/analytics'
 
 /** Cap the on-screen preview — the full file is still what gets ingested. */
 const PREVIEW_CHARS = 2000
@@ -51,6 +52,7 @@ export function TextIngestForm() {
 
   const submit = useAsyncAction(async () => {
     if (!canSubmit) return
+    track('capture_started', { method: 'text' })
     try {
       const sourceId = await ingestText({ title: title.trim(), text })
       navigate(`/sources/${sourceId}`)

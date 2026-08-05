@@ -6,6 +6,7 @@ import type { ListenButtonState } from '../../components/ui'
 import { useAsyncAction } from '../../lib/useAsyncAction'
 import { MediaRecorderError, useMediaRecorder } from './useMediaRecorder'
 import { useUploadAudio } from './sources-api'
+import { track } from '../../lib/analytics/analytics'
 
 /** Elapsed ms → `mm:ss` for the live recording readout. */
 function formatElapsed(ms: number): string {
@@ -58,11 +59,13 @@ export function RecordIngestForm() {
       const name = title.trim() || t('capture.record.defaultTitle', { date: todayStamp() })
       const file = new File([blob], `${name}.webm`, { type: 'audio/webm' })
       setProgress(0)
+      track('capture_started', { method: 'record' })
       try {
         const sourceId = await uploadAudio({
           title: name,
           file,
           contentType: 'audio/webm',
+          method: 'record',
           onProgress: setProgress,
         })
         navigate(`/sources/${sourceId}`)
