@@ -5,6 +5,7 @@ import type { CreateRoleRequest, Role, UpdateRoleRequest } from '@heediq/shared'
 import { Badge, Button, ErrorState, Table, useToast } from '../../components/ui'
 import { RoleForm, type RoleFormValues } from './RoleForm'
 import { apiClient, ApiClientError } from '../../lib/api-client'
+import { track } from '../../lib/analytics/analytics'
 
 interface ListRolesResponse {
   roles: Role[]
@@ -24,7 +25,8 @@ export function RolesPanel() {
 
   const createMutation = useMutation({
     mutationFn: (body: CreateRoleRequest) => apiClient.post<{ role: Role }>('/roles', body),
-    onSuccess: async () => {
+    onSuccess: async (data) => {
+      track('role_created', { roleId: data.role.roleId })
       await queryClient.invalidateQueries({ queryKey: ['roles'] })
       toast.success(t('rolesSettings.roles.createSuccess'))
       setFormOpen(false)
@@ -35,7 +37,8 @@ export function RolesPanel() {
   const updateMutation = useMutation({
     mutationFn: ({ roleId, body }: { roleId: string; body: UpdateRoleRequest }) =>
       apiClient.patch<{ role: Role }>(`/roles/${roleId}`, body),
-    onSuccess: async () => {
+    onSuccess: async (_data, variables) => {
+      track('role_updated', { roleId: variables.roleId })
       await queryClient.invalidateQueries({ queryKey: ['roles'] })
       toast.success(t('rolesSettings.roles.updateSuccess'))
       setFormOpen(false)
@@ -46,7 +49,8 @@ export function RolesPanel() {
 
   const deleteMutation = useMutation({
     mutationFn: (roleId: string) => apiClient.delete(`/roles/${roleId}`),
-    onSuccess: async () => {
+    onSuccess: async (_data, roleId) => {
+      track('role_deleted', { roleId })
       await queryClient.invalidateQueries({ queryKey: ['roles'] })
       toast.success(t('rolesSettings.roles.deleteSuccess'))
     },

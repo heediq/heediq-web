@@ -5,6 +5,7 @@ import type { AuditLogEntry, AuditResourceType } from '@heediq/shared'
 import { Button, ErrorState, Input, Select, Table } from '../components/ui'
 import { PageContainer, PageHeader } from '../components/layout'
 import { apiClient } from '../lib/api-client'
+import { track } from '../lib/analytics/analytics'
 import { formatDateTime } from '../lib/format'
 
 interface AuditLogResponse {
@@ -43,6 +44,10 @@ export function AuditLogPage() {
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS)
   const [cursor, setCursor] = useState<string | null>(null)
   const [entries, setEntries] = useState<AuditLogEntry[]>([])
+
+  useEffect(() => {
+    track('audit_log_viewed', {})
+  }, [])
 
   const query = useQuery({
     queryKey: ['auditLog', filters, cursor],

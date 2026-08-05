@@ -1,8 +1,10 @@
+import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, FolderPlus, MessageSquare } from 'lucide-react'
 import { Badge, Button, EmptyState, ErrorState, Skeleton } from '../../components/ui'
 import { LedgerSection } from '../ledger/LedgerSection'
+import { track } from '../../lib/analytics/analytics'
 import { useContextDetail, type ContextTreeNode } from './contexts-api'
 
 interface ContextDetailPanelProps {
@@ -25,6 +27,11 @@ export function ContextDetailPanel({
   const { t } = useTranslation()
   const navigate = useNavigate()
   const query = useContextDetail(contextId)
+
+  useEffect(() => {
+    if (query.data) track('context_opened', { contextId: query.data.context.contextId })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query.data])
 
   if (query.isPending) {
     return (

@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { isPasswordPolicyCompliant } from '@heediq/shared'
 import { Button, ErrorState, Input, LoadingMark, PasswordRequirements } from '../../components/ui'
 import { apiClient, ApiClientError } from '../../lib/api-client'
+import { track } from '../../lib/analytics/analytics'
 import { fadeUpVariants, transition } from '../../lib/motion'
 import { useAsyncAction } from '../../lib/useAsyncAction'
 
@@ -29,9 +30,17 @@ export interface VerifyAndSetPasswordFormProps {
   email: string
   onSuccess: (password: string) => void | Promise<void>
   onBack?: () => void
+  /** True only for the native-signup caller (no account existed yet) — fires `signup_completed` in
+   * addition to the `password_set` every caller gets (D-154). */
+  isSignup?: boolean
 }
 
-export function VerifyAndSetPasswordForm({ email, onSuccess, onBack }: VerifyAndSetPasswordFormProps) {
+export function VerifyAndSetPasswordForm({
+  email,
+  onSuccess,
+  onBack,
+  isSignup = false,
+}: VerifyAndSetPasswordFormProps) {
   const { t } = useTranslation()
   const [phase, setPhase] = useState<Phase>('sendingCode')
   const [code, setCode] = useState('')
@@ -100,6 +109,8 @@ export function VerifyAndSetPasswordForm({ email, onSuccess, onBack }: VerifyAnd
     }
     try {
       await apiClient.post('/auth/link/confirm', { email, newPassword })
+      track('password_set', {})
+      if (isSignup) track('signup_completed', {})
       await onSuccess(newPassword)
     } catch (err: unknown) {
       // WEAK_PASSWORD (Cognito's InvalidPasswordException) shouldn't normally happen — the

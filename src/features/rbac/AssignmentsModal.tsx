@@ -5,6 +5,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import type { CreateRoleAssignmentRequest, Group, Role, RoleAssignment, User } from '@heediq/shared'
 import { Button, ErrorState, LoadingMark, Modal, Select, useToast } from '../../components/ui'
 import { apiClient } from '../../lib/api-client'
+import { track } from '../../lib/analytics/analytics'
 import { fadeUpVariants, transition } from '../../lib/motion'
 
 interface AssignmentsModalProps {
@@ -39,7 +40,12 @@ export function AssignmentsModal({ open, onOpenChange, user, roles, groups }: As
   const assignMutation = useMutation({
     mutationFn: (body: CreateRoleAssignmentRequest) =>
       apiClient.post(`/users/${user?.userId}/role-assignments`, body),
-    onSuccess: async () => {
+    onSuccess: async (_data, variables) => {
+      // Group assignments have no corresponding D-154 event (acknowledged gap — only role
+      // assignment is tracked today).
+      if (variables.assignmentType === 'role' && user) {
+        track('user_role_assigned', { userId: user.userId, roleId: variables.roleId })
+      }
       await queryClient.invalidateQueries({ queryKey: ['roleAssignments', user?.userId] })
       toast.success(t('rolesSettings.users.assignSuccess'))
       setSelected(undefined)

@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { setAccessTokenGetter } from '../api-client'
-import { identifyUser, resetAnalytics } from '../analytics/analytics'
+import { identifyUser, resetAnalytics, track } from '../analytics/analytics'
 import { logoutUrl, refreshTokens, startLogin, type LinkableProvider, type TokenResponse } from './cognito-oauth'
 import { clearSession, getIdToken, getRefreshToken, setRefreshToken, setSession } from './token-store'
 
@@ -34,6 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .then((tokens) => {
         setSession(tokens)
         identifyUser(tokens.id_token)
+        track('session_restored', {})
         setStatus('authenticated')
       })
       .catch(() => {

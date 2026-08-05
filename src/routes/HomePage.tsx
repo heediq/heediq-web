@@ -9,6 +9,7 @@ import type { IdentityProvider } from '../components/ui'
 import { VerifyAndSetPasswordForm } from '../features/auth/VerifyAndSetPasswordForm'
 import { useAuth } from '../lib/auth/AuthContext'
 import { apiClient } from '../lib/api-client'
+import { track } from '../lib/analytics/analytics'
 import { fadeXVariants, transition } from '../lib/motion'
 import { useAsyncAction } from '../lib/useAsyncAction'
 import { usePerceivedLoading } from '../lib/usePerceivedLoading'
@@ -48,6 +49,10 @@ export function HomePage() {
   const [newPassword, setNewPassword] = useState('')
   const [error, setError] = useState('')
   const [ssoProvider, setSsoProvider] = useState<IdentityProvider | null>(null)
+  // Set by emailAction: distinguishes a brand-new account from an existing federated-only account
+  // reactively linking a password — only the former is a real signup (D-154's signup_started/
+  // signup_completed vs. password_set, which fires for both).
+  const [isNewSignup, setIsNewSignup] = useState(false)
   const reduceMotion = useReducedMotion()
   // See ProtectedRoute — same D-122 debounce so a fast initial session check never flashes this.
   // `status === 'authenticated'` is handled separately below (instant, no debounce): it's a
@@ -87,6 +92,7 @@ export function HomePage() {
       token_type: 'Bearer',
       expires_in: tokens.expiresIn,
     })
+    track('login_succeeded', { method: 'password' })
     navigate('/capture', { replace: true })
   }
 
@@ -99,6 +105,8 @@ export function HomePage() {
       } else {
         // Brand-new email or an existing federated-only account — both go through the same
         // own-verification + set-password flow (D-089); the shared component sends the code.
+        setIsNewSignup(!result.exists)
+        if (!result.exists) track('signup_started', {})
         setStep('verify')
       }
     } catch {
@@ -108,6 +116,7 @@ export function HomePage() {
 
   const signInAction = useAsyncAction(async () => {
     setError('')
+    track('login_started', { method: 'password' })
     try {
       await signInWithPassword(email, password)
     } catch (err) {
@@ -152,6 +161,7 @@ export function HomePage() {
 
   function handleSsoClick(provider: IdentityProvider) {
     setSsoProvider(provider)
+    track('login_started', { method: provider.toLowerCase() as 'google' | 'microsoft' })
     void login(provider)
   }
 
@@ -161,6 +171,7 @@ export function HomePage() {
     setCode('')
     setNewPassword('')
     setError('')
+    setIsNewSignup(false)
   }
 
   if (status === 'authenticated' || showSessionLoading) {
@@ -229,6 +240,7 @@ export function HomePage() {
                 email={email}
                 onBack={resetToEmailStep}
                 onSuccess={(passwordUsed) => signInWithPassword(email, passwordUsed)}
+                isSignup={isNewSignup}
               />
             ) : null}
 
