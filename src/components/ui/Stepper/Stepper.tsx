@@ -27,8 +27,8 @@ export function Stepper({ steps, current, className, 'aria-label': ariaLabel }: 
         const completed = index < current
         const active = index === current
         return (
-          <li key={step.id} className="flex flex-1 items-center last:flex-none">
-            <div className="flex items-center gap-2" aria-current={active ? 'step' : undefined}>
+          <li key={step.id} className="flex min-w-0 flex-1 items-center last:flex-none">
+            <div className="flex min-w-0 items-center gap-2" aria-current={active ? 'step' : undefined}>
               <span
                 className={cn(
                   'flex size-7 shrink-0 items-center justify-center rounded-full border text-caption font-medium transition-colors duration-base ease-brand',
@@ -39,10 +39,13 @@ export function Stepper({ steps, current, className, 'aria-label': ariaLabel }: 
               >
                 {completed ? <Check className="size-4" aria-hidden="true" /> : index + 1}
               </span>
+              {/* Mobile-first (UI-kit §7): labels can't force horizontal overflow. On narrow screens
+                  only the active step keeps its label (the rest read as numbered dots); the label
+                  itself truncates rather than pushing the row past the viewport. */}
               <span
                 className={cn(
-                  'text-caption font-medium',
-                  active ? 'text-text-primary' : 'text-text-secondary',
+                  'truncate text-caption font-medium',
+                  active ? 'text-text-primary' : 'text-text-secondary max-sm:hidden',
                 )}
               >
                 {step.label}

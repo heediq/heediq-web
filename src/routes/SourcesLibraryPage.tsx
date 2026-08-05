@@ -5,7 +5,9 @@ import { useQueryClient } from '@tanstack/react-query'
 import { FileAudio, Plus } from 'lucide-react'
 import type { WsEventPayloadMap } from '@heediq/shared'
 import { Badge, Button, EmptyState, ErrorState, Table } from '../components/ui'
+import { PageContainer, PageHeader } from '../components/layout'
 import { Can } from '../lib/rbac/Can'
+import { formatDateTime } from '../lib/format'
 import { useWsEvent } from '../lib/ws/useWsEvent'
 import { useSourcesList, sourceKeys, SOURCE_STATUS_TONE } from '../features/sources/sources-api'
 
@@ -41,17 +43,19 @@ export function SourcesLibraryPage() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 p-8">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-h1 text-text-primary">{t('sourcesLibrary.title')}</h1>
-        <Can permission="sources:create">
-          <Button asChild size="sm">
-            <Link to="/capture">
-              <Plus className="size-4" /> {t('sourcesLibrary.capture')}
-            </Link>
-          </Button>
-        </Can>
-      </div>
+    <PageContainer>
+      <PageHeader
+        title={t('sourcesLibrary.title')}
+        actions={
+          <Can permission="sources:create">
+            <Button asChild size="sm">
+              <Link to="/capture">
+                <Plus className="size-4" /> {t('sourcesLibrary.capture')}
+              </Link>
+            </Button>
+          </Can>
+        }
+      />
 
       {query.isError ? (
         <ErrorState
@@ -96,13 +100,15 @@ export function SourcesLibraryPage() {
                     onClick={() => openSource(source.sourceId)}
                     onKeyDown={(e) => onRowKeyDown(e, source.sourceId)}
                   >
-                    <Table.Cell>{source.title}</Table.Cell>
-                    <Table.Cell>
+                    <Table.Cell className="max-sm:font-medium">{source.title}</Table.Cell>
+                    <Table.Cell label={t('sourcesLibrary.columnStatus')}>
                       <Badge tone={SOURCE_STATUS_TONE[source.status]}>
                         {t(`sourceStatus.${source.status}`)}
                       </Badge>
                     </Table.Cell>
-                    <Table.Cell>{new Date(source.createdAt).toLocaleString()}</Table.Cell>
+                    <Table.Cell label={t('sourcesLibrary.columnCreated')}>
+                      {formatDateTime(source.createdAt)}
+                    </Table.Cell>
                   </Table.Row>
                 ))}
               </Table.Body>
@@ -122,6 +128,6 @@ export function SourcesLibraryPage() {
           ) : null}
         </>
       )}
-    </div>
+    </PageContainer>
   )
 }

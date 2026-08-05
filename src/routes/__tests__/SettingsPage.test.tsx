@@ -9,6 +9,11 @@ vi.mock('../../lib/auth/cognito-oauth', () => ({
   startProviderLink: (...args: unknown[]) => startProviderLink(...args),
 }))
 
+const logout = vi.fn()
+vi.mock('../../lib/auth/AuthContext', () => ({
+  useAuth: () => ({ status: 'authenticated', login: vi.fn(), logout, applyTokens: vi.fn() }),
+}))
+
 const getMock = vi.fn()
 const postMock = vi.fn()
 vi.mock('../../lib/api-client', () => ({
@@ -44,6 +49,15 @@ describe('SettingsPage', () => {
     startProviderLink.mockReset()
     getMock.mockReset()
     postMock.mockReset()
+    logout.mockReset()
+  })
+
+  it('logs out from the Account section (logout lives here, not the nav — D-152)', async () => {
+    mockMeAndMethods([{ provider: 'Google', linkedAt: '2026-01-01T00:00:00.000Z' }])
+    renderSettings()
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Log out' }))
+    expect(logout).toHaveBeenCalledOnce()
   })
 
   it('shows a loading indicator while methods and profile are being fetched', async () => {

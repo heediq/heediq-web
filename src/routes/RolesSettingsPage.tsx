@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '../lib/cn'
+import { PageContainer, PageHeader } from '../components/layout'
 import { RolesPanel } from '../features/rbac/RolesPanel'
 import { GroupsPanel } from '../features/rbac/GroupsPanel'
 import { UsersPanel } from '../features/rbac/UsersPanel'
@@ -12,10 +13,10 @@ export function RolesSettingsPage() {
   const [tab, setTab] = useState<Tab>('roles')
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-8">
-      <h1 className="text-h1">{t('rolesSettings.title')}</h1>
+    <PageContainer size="md">
+      <PageHeader title={t('rolesSettings.title')} />
 
-      <div role="tablist" className="flex gap-1 border-b border-border">
+      <div role="tablist" className="flex gap-1 overflow-x-auto border-b border-border">
         {(['roles', 'groups', 'users'] as const).map((value) => (
           <button
             key={value}
@@ -36,6 +37,6 @@ export function RolesSettingsPage() {
       </div>
 
       {tab === 'roles' ? <RolesPanel /> : tab === 'groups' ? <GroupsPanel /> : <UsersPanel />}
-    </div>
+    </PageContainer>
   )
 }

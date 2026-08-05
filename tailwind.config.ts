@@ -30,6 +30,9 @@ export default {
       },
       fontSize: {
         display: ['28px', { lineHeight: '1.3', letterSpacing: '-0.02em', fontWeight: '600' }],
+        // h1 — page-title token. Sits between display and h2; every page title uses `text-h1`
+        // (was previously an undefined class that silently fell back to body size).
+        h1: ['24px', { lineHeight: '1.35', letterSpacing: '-0.01em', fontWeight: '600' }],
         h2: ['20px', { lineHeight: '1.4', fontWeight: '600' }],
         body: ['15px', { lineHeight: '1.5', fontWeight: '400' }],
         caption: ['13px', { lineHeight: '1.4', fontWeight: '500' }],

@@ -23,6 +23,7 @@ import {
   Table,
   Tree,
 } from '../components/ui'
+import { PageHeader } from '../components/layout'
 
 export function DevUiGalleryPage() {
   const [checked, setChecked] = useState(true)
@@ -31,8 +32,23 @@ export function DevUiGalleryPage() {
   const [treeSelected, setTreeSelected] = useState<string | undefined>('proj-a')
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-8 p-8">
+    <div className="mx-auto flex max-w-3xl flex-col gap-8 px-4 py-6 sm:px-6 sm:py-8">
       <h1 className="text-display">UI kit gallery</h1>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-h2">Layout — PageContainer & PageHeader</h2>
+        <p className="text-caption text-text-secondary">
+          Every authed screen uses PageContainer (max-width + mobile-first gutter) + PageHeader (h1 +
+          description + actions). Shown inside a bordered box; on a real page PageContainer owns the frame.
+        </p>
+        <div className="rounded-md border border-border p-4">
+          <PageHeader
+            title="Sources"
+            description="Everything you've captured, newest first."
+            actions={<Button size="sm">New source</Button>}
+          />
+        </div>
+      </section>
 
       <section className="flex flex-col gap-3">
         <h2 className="text-h2">Button</h2>
@@ -228,6 +244,10 @@ export function DevUiGalleryPage() {
 
       <section className="flex flex-col gap-3">
         <h2 className="text-h2">Table</h2>
+        <p className="text-caption text-text-secondary">
+          Below 640px each row reflows to a card with `label: value` lines (pass the column header as the
+          Cell `label` prop) — narrow the window to see it. No horizontal scroll for primary content (D-153).
+        </p>
         <div className="flex flex-col gap-4">
           <Table columnCount={2}>
             <Table.Header>
@@ -238,12 +258,12 @@ export function DevUiGalleryPage() {
             </Table.Header>
             <Table.Body>
               <Table.Row>
-                <Table.Cell>Ada Lovelace</Table.Cell>
-                <Table.Cell>Admin</Table.Cell>
+                <Table.Cell className="max-sm:font-medium">Ada Lovelace</Table.Cell>
+                <Table.Cell label="Role">Admin</Table.Cell>
               </Table.Row>
               <Table.Row>
-                <Table.Cell>Alan Turing</Table.Cell>
-                <Table.Cell>Member</Table.Cell>
+                <Table.Cell className="max-sm:font-medium">Alan Turing</Table.Cell>
+                <Table.Cell label="Role">Member</Table.Cell>
               </Table.Row>
             </Table.Body>
           </Table>

@@ -72,7 +72,9 @@
     "settings": "Settings",
     "roles": "Roles & Permissions",
     "auditLog": "Audit Log",
-    "logout": "Log out"
+    "logout": "Log out",
+    "primary": "Primary",
+    "home": "Go to Sources"
   },
   "domains": {
     "work": "Work",
@@ -388,6 +390,11 @@
   },
   "settings": {
     "title": "Settings",
+    "account": {
+      "title": "Account",
+      "description": "You're signed in. Log out to switch accounts or secure this device.",
+      "logout": "Log out"
+    },
     "signInMethods": {
       "title": "Sign-in methods",
       "description": "Add another way to sign in to this account.",

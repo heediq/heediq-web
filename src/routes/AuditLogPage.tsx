@@ -3,7 +3,9 @@ import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
 import type { AuditLogEntry, AuditResourceType } from '@heediq/shared'
 import { Button, ErrorState, Input, Select, Table } from '../components/ui'
+import { PageContainer, PageHeader } from '../components/layout'
 import { apiClient } from '../lib/api-client'
+import { formatDateTime } from '../lib/format'
 
 interface AuditLogResponse {
   entries: AuditLogEntry[]
@@ -72,8 +74,8 @@ export function AuditLogPage() {
   )
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 p-8">
-      <h1 className="text-h1">{t('auditLog.title')}</h1>
+    <PageContainer>
+      <PageHeader title={t('auditLog.title')} />
 
       <div className="flex flex-wrap gap-4">
         <Input
@@ -131,10 +133,14 @@ export function AuditLogPage() {
               <Table.Body>
                 {entries.map((entry) => (
                   <Table.Row key={entry.eventId}>
-                    <Table.Cell>{new Date(entry.timestamp).toLocaleString()}</Table.Cell>
-                    <Table.Cell>{entry.actorEmail}</Table.Cell>
-                    <Table.Cell>{entry.action}</Table.Cell>
-                    <Table.Cell>{t(`auditLog.filters.resourceType.${entry.resourceType}`)}</Table.Cell>
+                    <Table.Cell className="max-sm:font-medium" label={t('auditLog.columnTimestamp')}>
+                      {formatDateTime(entry.timestamp)}
+                    </Table.Cell>
+                    <Table.Cell label={t('auditLog.columnActor')}>{entry.actorEmail}</Table.Cell>
+                    <Table.Cell label={t('auditLog.columnAction')}>{entry.action}</Table.Cell>
+                    <Table.Cell label={t('auditLog.columnResourceType')}>
+                      {t(`auditLog.filters.resourceType.${entry.resourceType}`)}
+                    </Table.Cell>
                   </Table.Row>
                 ))}
               </Table.Body>
@@ -150,6 +156,6 @@ export function AuditLogPage() {
           ) : null}
         </>
       )}
-    </div>
+    </PageContainer>
   )
 }
