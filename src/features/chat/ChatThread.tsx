@@ -15,6 +15,7 @@ import { LedgerGateBanner } from './LedgerGateBanner'
 import { ThinkingIndicator } from './ThinkingIndicator'
 import { chatKeys, useMessages, usePostMessage } from './chat-api'
 import { useChatStream } from './useChatStream'
+import { track } from '../../lib/analytics/analytics'
 
 interface ChatThreadProps {
   conversationId: string
@@ -84,6 +85,7 @@ export function ChatThread({ conversationId, contextId }: ChatThreadProps) {
     setOptimisticUser(text)
     stream.begin()
     setAtBottom(true)
+    track('chat_sent', { conversationId, contextId })
     postMutation.mutate(
       { content: text, bypassLedgerGating: opts?.bypass },
       {

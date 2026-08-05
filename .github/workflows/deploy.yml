@@ -84,6 +84,9 @@ jobs:
           echo "distribution_id=$(aws ssm get-parameter --name /heediq/web/cloudfront-distribution-id --query Parameter.Value --output text)" >> "$GITHUB_OUTPUT"
           echo "cognito_domain=$(aws ssm get-parameter --name /heediq/api/cognito-hosted-ui-domain --query Parameter.Value --output text)" >> "$GITHUB_OUTPUT"
           echo "cognito_client_id=$(aws ssm get-parameter --name /heediq/api/cognito-client-id --query Parameter.Value --output text)" >> "$GITHUB_OUTPUT"
+          # Optional (D-151): analytics only turns on where this param exists. Absent → empty →
+          # the web client stays a clean no-op. `|| true` tolerates envs not yet provisioned.
+          echo "amplitude_api_key=$(aws ssm get-parameter --name /heediq/web/amplitude-api-key --query Parameter.Value --output text 2>/dev/null || true)" >> "$GITHUB_OUTPUT"
 
       - name: Build
         run: pnpm run build
@@ -93,6 +96,7 @@ jobs:
           VITE_COGNITO_DOMAIN: ${{ steps.ssm.outputs.cognito_domain }}
           VITE_COGNITO_CLIENT_ID: ${{ steps.ssm.outputs.cognito_client_id }}
           VITE_COGNITO_REGION: ${{ vars.AWS_REGION }}
+          VITE_AMPLITUDE_API_KEY: ${{ steps.ssm.outputs.amplitude_api_key }}
           VITE_APP_ENV: dev
 
       - name: Sync to S3
@@ -145,6 +149,9 @@ jobs:
           echo "distribution_id=$(aws ssm get-parameter --name /heediq/web/cloudfront-distribution-id --query Parameter.Value --output text)" >> "$GITHUB_OUTPUT"
           echo "cognito_domain=$(aws ssm get-parameter --name /heediq/api/cognito-hosted-ui-domain --query Parameter.Value --output text)" >> "$GITHUB_OUTPUT"
           echo "cognito_client_id=$(aws ssm get-parameter --name /heediq/api/cognito-client-id --query Parameter.Value --output text)" >> "$GITHUB_OUTPUT"
+          # Optional (D-151): analytics only turns on where this param exists. Absent → empty →
+          # the web client stays a clean no-op. `|| true` tolerates envs not yet provisioned.
+          echo "amplitude_api_key=$(aws ssm get-parameter --name /heediq/web/amplitude-api-key --query Parameter.Value --output text 2>/dev/null || true)" >> "$GITHUB_OUTPUT"
 
       - name: Build
         run: pnpm run build
@@ -154,6 +161,7 @@ jobs:
           VITE_COGNITO_DOMAIN: ${{ steps.ssm.outputs.cognito_domain }}
           VITE_COGNITO_CLIENT_ID: ${{ steps.ssm.outputs.cognito_client_id }}
           VITE_COGNITO_REGION: ${{ vars.AWS_REGION }}
+          VITE_AMPLITUDE_API_KEY: ${{ steps.ssm.outputs.amplitude_api_key }}
           VITE_APP_ENV: staging
 
       - name: Sync to S3
@@ -206,6 +214,9 @@ jobs:
           echo "distribution_id=$(aws ssm get-parameter --name /heediq/web/cloudfront-distribution-id --query Parameter.Value --output text)" >> "$GITHUB_OUTPUT"
           echo "cognito_domain=$(aws ssm get-parameter --name /heediq/api/cognito-hosted-ui-domain --query Parameter.Value --output text)" >> "$GITHUB_OUTPUT"
           echo "cognito_client_id=$(aws ssm get-parameter --name /heediq/api/cognito-client-id --query Parameter.Value --output text)" >> "$GITHUB_OUTPUT"
+          # Optional (D-151): analytics only turns on where this param exists. Absent → empty →
+          # the web client stays a clean no-op. `|| true` tolerates envs not yet provisioned.
+          echo "amplitude_api_key=$(aws ssm get-parameter --name /heediq/web/amplitude-api-key --query Parameter.Value --output text 2>/dev/null || true)" >> "$GITHUB_OUTPUT"
 
       - name: Build
         run: pnpm run build
@@ -215,6 +226,7 @@ jobs:
           VITE_COGNITO_DOMAIN: ${{ steps.ssm.outputs.cognito_domain }}
           VITE_COGNITO_CLIENT_ID: ${{ steps.ssm.outputs.cognito_client_id }}
           VITE_COGNITO_REGION: ${{ vars.AWS_REGION }}
+          VITE_AMPLITUDE_API_KEY: ${{ steps.ssm.outputs.amplitude_api_key }}
           VITE_APP_ENV: production
 
       - name: Sync to S3

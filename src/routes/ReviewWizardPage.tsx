@@ -10,6 +10,7 @@ import { CreateContextModal } from '../features/contexts/CreateContextModal'
 import { LedgerReconcileStep } from '../features/ledger/LedgerReconcileStep'
 import { useContextTree, flattenContexts } from '../features/contexts/contexts-api'
 import { useSource, useSourceItems, groupByCategory } from '../features/sources/sources-api'
+import { track } from '../lib/analytics/analytics'
 
 export function ReviewWizardPage() {
   const { sourceId = '' } = useParams<{ sourceId: string }>()
@@ -29,6 +30,11 @@ export function ReviewWizardPage() {
 
   const proposal = sourceQuery.data?.source.proposedClassification
 
+  // Funnel: the review wizard was opened for this Source (D-151). Once per Source.
+  useEffect(() => {
+    if (sourceId) track('review_opened', { sourceId })
+  }, [sourceId])
+
   // Seed the placement from the classifier's proposed existing context, once.
   useEffect(() => {
     if (contextId === undefined && proposal?.proposedContextId) {
@@ -39,7 +45,12 @@ export function ReviewWizardPage() {
   const reviewMutation = useMutation({
     mutationFn: (body: ReviewApprovalRequest) =>
       apiClient.post<{ keptCount: number; discardedCount: number }>(`/sources/${sourceId}/review`, body),
-    onSuccess: async () => {
+    onSuccess: async (_data, variables) => {
+      track('items_kept', {
+        sourceId,
+        contextId: variables.contextId,
+        keptCount: variables.kept.length,
+      })
       await queryClient.invalidateQueries({ queryKey: ['sources'] })
       await queryClient.invalidateQueries({ queryKey: ['contexts'] })
       toast.success(t('reviewWizard.success'))
