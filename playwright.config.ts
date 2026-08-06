@@ -17,6 +17,9 @@ const BASE_URL = `http://localhost:${PORT}`
 export default defineConfig({
   testDir: './e2e',
   testMatch: '**/*.e2e.ts',
+  // The mocked-backend flow tier (D-155) lives in e2e/flows and runs under playwright.flows.config.ts
+  // with its own VITE_E2E webServer — keep it out of this responsive-only harness.
+  testIgnore: '**/flows/**',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,

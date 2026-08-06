@@ -34,3 +34,33 @@ jobs:
 
       - name: Test
         run: pnpm run test
+
+  e2e:
+    name: E2E flows (mocked backend)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@heediq'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Tier 1 runs entirely in-browser against a mocked backend (D-155) — only the browser binary is
+      # needed, no real services. Chromium-only keeps the install lean; the flows config runs Chromium.
+      - name: Install Playwright browser
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: E2E flows
+        run: pnpm run test:e2e

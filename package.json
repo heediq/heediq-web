@@ -11,7 +11,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:responsive": "playwright test",
-    "test:pre-pr": "pnpm run typecheck && pnpm run test"
+    "test:pre-pr": "pnpm run typecheck && pnpm run test",
+    "test:e2e": "playwright test --config playwright.flows.config.ts"
   },
   "dependencies": {
     "@amplitude/analytics-browser": "^2.11.0",

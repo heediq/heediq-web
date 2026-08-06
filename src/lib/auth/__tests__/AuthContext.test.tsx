@@ -86,4 +86,32 @@ describe('AuthProvider', () => {
     const registeredGetter = setAccessTokenGetter.mock.calls[0]?.[0] as () => string | null
     expect(registeredGetter()).toBe('it')
   })
+
+  // D-155 E2E seam: with VITE_E2E set, a window-planted synthetic session bootstraps straight to
+  // authenticated with no Cognito refresh round trip. The seam is inert in real builds — proven in
+  // e2e-seam.test.ts (flag off ⇒ planted session ignored).
+  it('bootstraps from a planted E2E session when VITE_E2E is set, skipping the refresh round trip', async () => {
+    vi.stubEnv('VITE_E2E', '1')
+    ;(window as unknown as { __E2E_SESSION__?: unknown }).__E2E_SESSION__ = {
+      access_token: 'e2e-at',
+      id_token: 'e2e-it',
+      refresh_token: 'e2e-rt',
+      token_type: 'Bearer',
+      expires_in: 3600,
+    }
+
+    render(
+      <AuthProvider>
+        <Probe />
+      </AuthProvider>,
+    )
+
+    await waitFor(() => expect(screen.getByText('status:authenticated')).toBeInTheDocument())
+    expect(refreshTokens).not.toHaveBeenCalled()
+    const registeredGetter = setAccessTokenGetter.mock.calls[0]?.[0] as () => string | null
+    expect(registeredGetter()).toBe('e2e-it')
+
+    delete (window as unknown as { __E2E_SESSION__?: unknown }).__E2E_SESSION__
+    vi.unstubAllEnvs()
+  })
 })

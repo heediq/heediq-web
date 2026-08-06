@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { setAccessTokenGetter } from '../api-client'
 import { identifyUser, resetAnalytics, track } from '../analytics/analytics'
 import { logoutUrl, refreshTokens, startLogin, type LinkableProvider, type TokenResponse } from './cognito-oauth'
+import { readE2eSession } from './e2e-seam'
 import { clearSession, getIdToken, getRefreshToken, setRefreshToken, setSession } from './token-store'
 
 type AuthStatus = 'loading' | 'authenticated' | 'anonymous'
@@ -24,6 +25,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
+    // E2E-only seam (D-155): a Playwright-planted synthetic session bootstraps straight to
+    // authenticated, with no Cognito refresh round trip. Compiled out of every real build
+    // (readE2eSession is dead code unless VITE_E2E is set — see e2e-seam.ts).
+    const e2eSession = readE2eSession()
+    if (e2eSession) {
+      setSession(e2eSession)
+      setRefreshToken(e2eSession.refresh_token)
+      identifyUser(e2eSession.id_token)
+      setStatus('authenticated')
+      return
+    }
+
     const refreshToken = getRefreshToken()
     if (!refreshToken) {
       setStatus('anonymous')
