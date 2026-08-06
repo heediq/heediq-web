@@ -5,6 +5,8 @@ import { exchangeLinkCodeForTokens } from '../lib/auth/cognito-oauth'
 import { apiClient } from '../lib/api-client'
 import { decodeJwtPayload } from '../lib/auth/jwt'
 import { useOAuthCallbackExchange } from '../lib/auth/useOAuthCallbackExchange'
+import { track } from '../lib/analytics/analytics'
+import type { ProviderAuthMethod } from '../lib/analytics/analytics'
 
 interface CognitoIdentity {
   userId: string
@@ -31,6 +33,10 @@ export function SettingsLinkCallbackPage() {
         provider: identity.providerName,
         providerUserId: identity.userId,
       })
+      const method = identity.providerName.toLowerCase()
+      if (method === 'google' || method === 'microsoft') {
+        track('provider_link_completed', { provider: method as ProviderAuthMethod })
+      }
     },
     onDone: () => navigate('/settings', { replace: true }),
   })

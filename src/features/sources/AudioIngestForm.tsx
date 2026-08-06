@@ -82,6 +82,7 @@ export function AudioIngestForm() {
         method: 'audio',
         onProgress: setProgress,
       })
+      track('capture_submitted', { method: 'audio' })
       navigate(`/sources/${sourceId}`)
     } catch {
       toast.error(t('capture.audio.submitError'))

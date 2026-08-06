@@ -55,6 +55,7 @@ export function TextIngestForm() {
     track('capture_started', { method: 'text' })
     try {
       const sourceId = await ingestText({ title: title.trim(), text })
+      track('capture_submitted', { method: 'text' })
       navigate(`/sources/${sourceId}`)
     } catch {
       toast.error(t('capture.text.submitError'))

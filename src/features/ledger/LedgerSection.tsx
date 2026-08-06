@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Plus } from 'lucide-react'
 import { Button, EmptyState, ErrorState, Input, Skeleton, useToast } from '../../components/ui'
 import { Can } from '../../lib/rbac/Can'
+import { track } from '../../lib/analytics/analytics'
 import { useAsyncAction } from '../../lib/useAsyncAction'
 import { LedgerEntryRow } from './LedgerEntryRow'
 import { useCreateLedgerEntry, useLedger } from './ledger-api'
@@ -21,6 +22,10 @@ export function LedgerSection({ contextId }: LedgerSectionProps) {
   const toast = useToast()
   const query = useLedger(contextId)
   const createMutation = useCreateLedgerEntry(contextId)
+
+  useEffect(() => {
+    track('ledger_viewed', { contextId })
+  }, [contextId])
 
   const [adding, setAdding] = useState(false)
   const [topic, setTopic] = useState('')

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { track } from '../analytics/analytics'
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>
@@ -34,6 +35,7 @@ export function useInstallPrompt(): UseInstallPromptResult {
       setDeferredPrompt(event as BeforeInstallPromptEvent)
     }
     function handleAppInstalled() {
+      track('pwa_installed', {})
       setInstalled(true)
       setDeferredPrompt(null)
     }
@@ -48,6 +50,7 @@ export function useInstallPrompt(): UseInstallPromptResult {
 
   async function promptInstall(): Promise<'accepted' | 'dismissed' | 'unavailable'> {
     if (!deferredPrompt) return 'unavailable'
+    track('pwa_install_prompted', {})
     await deferredPrompt.prompt()
     const { outcome } = await deferredPrompt.userChoice
     setDeferredPrompt(null)

@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { DomainSchema, type Context, type CreateContextRequest, type Domain } from '@heediq/shared'
 import { Button, Input, Modal, Select, useToast } from '../../components/ui'
 import { apiClient } from '../../lib/api-client'
+import { track } from '../../lib/analytics/analytics'
 import { contextKeys, type ContextTreeNode, flattenContexts } from './contexts-api'
 
 interface CreateContextModalProps {
@@ -53,6 +54,7 @@ export function CreateContextModal({
   const createMutation = useMutation({
     mutationFn: (body: CreateContextRequest) => apiClient.post<{ context: Context }>('/contexts', body),
     onSuccess: async ({ context }) => {
+      track('context_created', { contextId: context.contextId, visibility: context.visibility })
       await queryClient.invalidateQueries({ queryKey: contextKeys.all })
       toast.success(t('contextLibrary.form.createSuccess'))
       reset()

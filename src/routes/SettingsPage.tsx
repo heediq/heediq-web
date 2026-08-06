@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
@@ -23,6 +23,10 @@ export function SettingsPage() {
   const queryClient = useQueryClient()
   const [settingPassword, setSettingPassword] = useState(false)
   const { canInstall, installed, promptInstall } = useInstallPrompt()
+
+  useEffect(() => {
+    track('settings_opened', {})
+  }, [])
 
   const meQuery = useQuery({
     queryKey: ['me'],
@@ -135,7 +139,10 @@ export function SettingsPage() {
                           <Button
                             type="button"
                             variant="secondary"
-                            onClick={() => void startProviderLink('Google' satisfies LinkableProvider)}
+                            onClick={() => {
+                              track('provider_link_started', { provider: 'google' })
+                              void startProviderLink('Google' satisfies LinkableProvider)
+                            }}
                           >
                             {t('settings.signInMethods.linkGoogle')}
                           </Button>
@@ -144,7 +151,10 @@ export function SettingsPage() {
                           <Button
                             type="button"
                             variant="secondary"
-                            onClick={() => void startProviderLink('Microsoft' satisfies LinkableProvider)}
+                            onClick={() => {
+                              track('provider_link_started', { provider: 'microsoft' })
+                              void startProviderLink('Microsoft' satisfies LinkableProvider)
+                            }}
                           >
                             {t('settings.signInMethods.linkMicrosoft')}
                           </Button>

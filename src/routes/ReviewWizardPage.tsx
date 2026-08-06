@@ -163,7 +163,10 @@ export function ReviewWizardPage() {
           <Select
             label={t('reviewWizard.placement.contextLabel')}
             value={contextId}
-            onValueChange={setContextId}
+            onValueChange={(id) => {
+              setContextId(id)
+              track('review_context_selected', { sourceId, contextId: id, isNew: false })
+            }}
             options={contextOptions}
             placeholder={t('reviewWizard.placement.contextPlaceholder')}
           />
@@ -236,7 +239,10 @@ export function ReviewWizardPage() {
         tree={tree}
         defaultName={proposal?.newContextName}
         defaultDomain={proposal?.domain}
-        onCreated={(context: Context) => setContextId(context.contextId)}
+        onCreated={(context: Context) => {
+          setContextId(context.contextId)
+          track('review_context_selected', { sourceId, contextId: context.contextId, isNew: true })
+        }}
       />
     </PageContainer>
   )

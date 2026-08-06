@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useQueryClient } from '@tanstack/react-query'
@@ -9,6 +9,7 @@ import { PageContainer } from '../components/layout'
 import { useWsEvent } from '../lib/ws/useWsEvent'
 import { ExtractedItemsList } from '../features/sources/ExtractedItemsList'
 import { useSource, useSourceSummary, useSourceItems, sourceKeys, SOURCE_STATUS_TONE } from '../features/sources/sources-api'
+import { track } from '../lib/analytics/analytics'
 
 const CLASSIFICATION_TONE: Record<SourceClassification, 'active' | 'success'> = {
   pending_review: 'active',
@@ -24,6 +25,10 @@ export function SourceDetailPage() {
   const sourceQuery = useSource(sourceId)
   const summaryQuery = useSourceSummary(sourceId)
   const itemsQuery = useSourceItems(sourceId)
+
+  useEffect(() => {
+    if (sourceId) track('source_detail_opened', { sourceId })
+  }, [sourceId])
 
   // Ingest classification lands async (D-111/D-133) — when it does for this source, refresh so the
   // Review affordance + extracted items appear without a reload or polling.

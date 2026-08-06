@@ -5,6 +5,7 @@ import type { CreateGroupRequest, Group, Role, UpdateGroupRequest } from '@heedi
 import { Button, ErrorState, Table, useToast } from '../../components/ui'
 import { GroupForm, type GroupFormValues } from './GroupForm'
 import { apiClient } from '../../lib/api-client'
+import { track } from '../../lib/analytics/analytics'
 
 interface ListGroupsResponse {
   groups: Group[]
@@ -33,7 +34,8 @@ export function GroupsPanel() {
 
   const createMutation = useMutation({
     mutationFn: (body: CreateGroupRequest) => apiClient.post<{ group: Group }>('/groups', body),
-    onSuccess: async () => {
+    onSuccess: async (data) => {
+      track('group_created', { groupId: data.group.groupId })
       await queryClient.invalidateQueries({ queryKey: ['groups'] })
       toast.success(t('rolesSettings.groups.createSuccess'))
       setFormOpen(false)

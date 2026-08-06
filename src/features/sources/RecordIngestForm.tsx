@@ -68,6 +68,7 @@ export function RecordIngestForm() {
           method: 'record',
           onProgress: setProgress,
         })
+        track('capture_submitted', { method: 'record' })
         navigate(`/sources/${sourceId}`)
       } catch {
         toast.error(t('capture.record.submitError'))

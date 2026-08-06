@@ -49,6 +49,13 @@ export function ChatThread({ conversationId, contextId }: ChatThreadProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const [atBottom, setAtBottom] = useState(true)
 
+  // ChatThread is remounted per-conversation (`key={selectedId}` in ContextChatPage), so this fires
+  // once per conversation actually opened.
+  useEffect(() => {
+    track('chat_opened', { contextId, conversationId })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contextId, conversationId])
+
   const messages = messagesQuery.data?.messages ?? []
   const pending = stream.pending
   const showPending =
@@ -96,6 +103,7 @@ export function ChatThread({ conversationId, contextId }: ChatThreadProps) {
           if (err instanceof ApiClientError && err.code === LEDGER_GATED_ERROR_CODE) {
             const parsed = LedgerGatedDetailsSchema.safeParse(err.details)
             if (parsed.success) {
+              track('ledger_gate_blocked', { contextId })
               setGate(parsed.data)
               return
             }
@@ -107,6 +115,7 @@ export function ChatThread({ conversationId, contextId }: ChatThreadProps) {
   }
 
   function retry() {
+    track('chat_retry', { conversationId })
     const lastUser = [...messages].reverse().find((m) => m.role === 'user')
     if (lastUser) send(lastUser.content)
   }
@@ -200,6 +209,7 @@ export function ChatThread({ conversationId, contextId }: ChatThreadProps) {
                 if (text) send(text)
               }}
               onSendAnyway={() => {
+                track('ledger_gate_overridden', { contextId })
                 const text = pendingText.current
                 if (text) send(text, { bypass: true })
               }}
@@ -208,7 +218,10 @@ export function ChatThread({ conversationId, contextId }: ChatThreadProps) {
           ) : null}
           <ChatComposer
             onSend={send}
-            onStop={stream.stop}
+            onStop={() => {
+              track('chat_stopped', { conversationId })
+              stream.stop()
+            }}
             streaming={!!isInFlight}
             disabled={postMutation.isPending}
           />
