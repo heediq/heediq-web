@@ -84,9 +84,11 @@ jobs:
           echo "distribution_id=$(aws ssm get-parameter --name /heediq/web/cloudfront-distribution-id --query Parameter.Value --output text)" >> "$GITHUB_OUTPUT"
           echo "cognito_domain=$(aws ssm get-parameter --name /heediq/api/cognito-hosted-ui-domain --query Parameter.Value --output text)" >> "$GITHUB_OUTPUT"
           echo "cognito_client_id=$(aws ssm get-parameter --name /heediq/api/cognito-client-id --query Parameter.Value --output text)" >> "$GITHUB_OUTPUT"
-          # Optional (D-151): analytics only turns on where this param exists. Absent → empty →
-          # the web client stays a clean no-op. `|| true` tolerates envs not yet provisioned.
-          echo "amplitude_api_key=$(aws ssm get-parameter --name /heediq/web/amplitude-api-key --query Parameter.Value --output text 2>/dev/null || true)" >> "$GITHUB_OUTPUT"
+          # Optional (D-151/D-154): analytics only turns on where this param exists. Absent → empty →
+          # the web client stays a clean no-op. `|| true` tolerates envs not yet provisioned. Shared
+          # neutral param (/heediq/analytics/, not /heediq/web/) — the SAME Amplitude project key the
+          # server-side choke-point reads, so client + server events land in one project (D-154 join).
+          echo "amplitude_api_key=$(aws ssm get-parameter --name /heediq/analytics/amplitude-api-key --query Parameter.Value --output text 2>/dev/null || true)" >> "$GITHUB_OUTPUT"
 
       - name: Build
         run: pnpm run build
@@ -149,9 +151,11 @@ jobs:
           echo "distribution_id=$(aws ssm get-parameter --name /heediq/web/cloudfront-distribution-id --query Parameter.Value --output text)" >> "$GITHUB_OUTPUT"
           echo "cognito_domain=$(aws ssm get-parameter --name /heediq/api/cognito-hosted-ui-domain --query Parameter.Value --output text)" >> "$GITHUB_OUTPUT"
           echo "cognito_client_id=$(aws ssm get-parameter --name /heediq/api/cognito-client-id --query Parameter.Value --output text)" >> "$GITHUB_OUTPUT"
-          # Optional (D-151): analytics only turns on where this param exists. Absent → empty →
-          # the web client stays a clean no-op. `|| true` tolerates envs not yet provisioned.
-          echo "amplitude_api_key=$(aws ssm get-parameter --name /heediq/web/amplitude-api-key --query Parameter.Value --output text 2>/dev/null || true)" >> "$GITHUB_OUTPUT"
+          # Optional (D-151/D-154): analytics only turns on where this param exists. Absent → empty →
+          # the web client stays a clean no-op. `|| true` tolerates envs not yet provisioned. Shared
+          # neutral param (/heediq/analytics/, not /heediq/web/) — the SAME Amplitude project key the
+          # server-side choke-point reads, so client + server events land in one project (D-154 join).
+          echo "amplitude_api_key=$(aws ssm get-parameter --name /heediq/analytics/amplitude-api-key --query Parameter.Value --output text 2>/dev/null || true)" >> "$GITHUB_OUTPUT"
 
       - name: Build
         run: pnpm run build
@@ -214,9 +218,11 @@ jobs:
           echo "distribution_id=$(aws ssm get-parameter --name /heediq/web/cloudfront-distribution-id --query Parameter.Value --output text)" >> "$GITHUB_OUTPUT"
           echo "cognito_domain=$(aws ssm get-parameter --name /heediq/api/cognito-hosted-ui-domain --query Parameter.Value --output text)" >> "$GITHUB_OUTPUT"
           echo "cognito_client_id=$(aws ssm get-parameter --name /heediq/api/cognito-client-id --query Parameter.Value --output text)" >> "$GITHUB_OUTPUT"
-          # Optional (D-151): analytics only turns on where this param exists. Absent → empty →
-          # the web client stays a clean no-op. `|| true` tolerates envs not yet provisioned.
-          echo "amplitude_api_key=$(aws ssm get-parameter --name /heediq/web/amplitude-api-key --query Parameter.Value --output text 2>/dev/null || true)" >> "$GITHUB_OUTPUT"
+          # Optional (D-151/D-154): analytics only turns on where this param exists. Absent → empty →
+          # the web client stays a clean no-op. `|| true` tolerates envs not yet provisioned. Shared
+          # neutral param (/heediq/analytics/, not /heediq/web/) — the SAME Amplitude project key the
+          # server-side choke-point reads, so client + server events land in one project (D-154 join).
+          echo "amplitude_api_key=$(aws ssm get-parameter --name /heediq/analytics/amplitude-api-key --query Parameter.Value --output text 2>/dev/null || true)" >> "$GITHUB_OUTPUT"
 
       - name: Build
         run: pnpm run build

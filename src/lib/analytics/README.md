@@ -119,7 +119,9 @@ email, or any free text. This is enforced several ways:
 ## Key handling & the no-op path
 - The public **API key** (not a secret; safe in the browser bundle) is read from
   `import.meta.env.VITE_AMPLITUDE_API_KEY`, baked at build time from SSM
-  `/heediq/web/amplitude-api-key` (see `.github/workflows/deploy.yml`).
+  `/heediq/analytics/amplitude-api-key` (see `.github/workflows/deploy.yml`). This is a **shared**
+  neutral param — the same Amplitude project key the server-side choke-point (heediq-api) reads, so
+  client- and server-emitted events land in one project and the D-154 cross-service join resolves.
 - **No key → clean no-op.** With the var unset (local dev, or an environment whose SSM param isn't
   provisioned yet) the SDK is never even imported and every `track`/`identify` call is a cheap
   no-op. Analytics must never break or block the app — load/init failures degrade to disabled.
